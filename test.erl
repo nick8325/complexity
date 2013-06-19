@@ -35,26 +35,29 @@ qsort([X|Xs]) ->
     [X] ++
     qsort([Y || Y <- Xs, Y >= X]).
 
+list_gen() ->
+    frequency([{50, list(int())},
+               {1, ?LET(Xs, list(int()), lists:sort(Xs))},
+               {1, ?LET(Xs, list(int()), lists:reverse(lists:sort(Xs)))}]).
+
 measure_sort() ->
-    measure(10000, 1000, list(int()),
+    measure(10000, 1000, list_gen(),
             fun length/1,
             fun lists:sort/1).
 
 measure_isort() ->
-    measure(10000, 100, list(int()),
+    measure(10000, 100, list_gen(),
             fun length/1,
             fun insertion_sort/1).
 
 measure_qsort() ->
-    measure(10000, 100,
-            frequency([{100, list(int())},
-                       {1, ?LET(Xs, list(int()), lists:sort(Xs))}]),
+    measure(10000, 100, list_gen(),
             fun length/1,
             fun qsort/1).
 
 measure_lookup_gbsets() ->
     measure(10000, 1000,
-            ?LET(Xs, list(int()),
+            ?LET(Xs, list_gen(),
                  {int(), gb_sets:from_list(Xs)}),
             fun({_, T}) -> gb_sets:size(T) end,
             fun({X, T}) -> gb_sets:is_element(X, T) end).
