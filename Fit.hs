@@ -9,20 +9,21 @@ parse = map (pair . map read . words) . lines
 constraints f points =
   Dense [ f x y | (x, y) <- points ]
 
-fitAbove points =
-  simplex (Minimize (opt points))
-          (constraints (\x y -> [x, 1] :=>: y) points)
+fitAbove trans points =
+  simplex (Minimize (opt trans points))
+          (constraints (\x y -> [x, 1] :=>: y) (rename (xt trans) points))
           [Free 2]
-fitBelow points =
-  simplex (Maximize (opt points))
-          (constraints (\x y -> [x, 1] :<=: y) points)
+fitBelow trans points =
+  simplex (Maximize (opt trans points))
+          (constraints (\x y -> [x, 1] :<=: y) (rename (xt trans) points))
           [Free 2]
 
--- y-value ranges from b to ax+b
--- hence average y-value is: 
---   (b+(ax+b))/2
--- = (ax+2b)/2
-opt points = [maxX, 2]
+--   int(at+b)
+-- = a int(t) + bx
+-- hence total area is:
+--   a int(x) + bx - a int(0)
+-- = a(int(x) - int(0)) + bx
+opt trans points = [integral trans maxX - integral trans 0, maxX]
   where
     maxX = maximum (map fst points)
 
@@ -95,8 +96,8 @@ findArea trans sol points =
 
 fit trans points =
   Fit
-    (findArea trans (fitAbove (rename (xt trans) points)) points)
-    (findArea trans (fitBelow (rename (xt trans) points)) points)
+    (findArea trans (fitAbove trans points) points)
+    (findArea trans (fitBelow trans points) points)
 
 main = do
   args <- getArgs
