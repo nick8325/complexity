@@ -46,7 +46,9 @@ measure_isort() ->
             fun insertion_sort/1).
 
 measure_qsort() ->
-    measure(10000, 100, list(int()),
+    measure(10000, 100,
+            frequency([{100, list(int())},
+                       {1, ?LET(Xs, list(int()), lists:sort(Xs))}]),
             fun length/1,
             fun qsort/1).
 
