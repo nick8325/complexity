@@ -1,13 +1,14 @@
 import Numeric.LinearProgramming
 import System.Environment
+import Data.Tuple
 
-parse :: String -> [(Double, Double)]
-parse = map (pair . map read . words) . lines
+parse :: String -> [(Double, Double, Double)]
+parse = map (triple . map read . words) . lines
   where
-    pair [x,y,z] = (x,y)
+    triple [x,y,z] = (x,y,z)
 
 constraints f points =
-  Dense [ f x y | (x, y) <- points ]
+  Dense [ f x y | (x, y, _) <- points ]
 
 fitAbove trans points =
   simplex (Minimize (opt trans points))
@@ -25,7 +26,8 @@ fitBelow trans points =
 -- = a(int(x) - int(0)) + bx
 opt trans points = [integral trans maxX - integral trans 0, maxX]
   where
-    maxX = maximum (map fst points)
+    maxX = maximum (map fst3 points)
+    fst3 (x,_,_) = x
 
 data Transformation = Transformation {
   name :: String,
@@ -76,7 +78,7 @@ nlognT = Transformation "x*log(x)" (\x -> x * log (x+1))
          (\x -> (x**2 - 1) * log (x+1) / 2 - (x-2)*x / 4)
 n2T = Transformation "x**2" (^2) (\x -> x^3 / 3)
 
-rename f ps = [(f x, y) | (x, y) <- ps]
+rename f ps = [(f x, y, k) | (x, y, k) <- ps]
 
 findArea trans sol points =
   case findSol sol of
@@ -92,7 +94,8 @@ findArea trans sol points =
     findSol (Optimal x) = Just x
     findSol _ = Nothing
 
-    maxX = maximum (map fst points)
+    maxX = maximum (map fst3 points)
+    fst3 (x,_,_) = x
 
 fit trans points =
   Fit
