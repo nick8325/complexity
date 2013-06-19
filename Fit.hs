@@ -19,15 +19,16 @@ fitBelow trans points =
           (constraints (\x y -> [x, 1] :<=: y) (rename (xt trans) points))
           [Free 2]
 
+maxX points = maximum (map fst3 points)
+  where
+    fst3 (x,_,_) = x
+
 --   int(at+b)
 -- = a int(t) + bx
 -- hence total area is:
 --   a int(x) + bx - a int(0)
 -- = a(int(x) - int(0)) + bx
-opt trans points = [integral trans maxX - integral trans 0, maxX]
-  where
-    maxX = maximum (map fst3 points)
-    fst3 (x,_,_) = x
+opt trans points = [integral trans (maxX points) - integral trans 0, maxX points]
 
 data Transformation = Transformation {
   name :: String,
@@ -84,7 +85,7 @@ findArea trans sol points =
   case findSol sol of
     Just (_, [a, b]) ->
       Known (name trans)
-            (a * integral trans maxX + b * maxX)
+            (a * integral trans (maxX points) + b * maxX points)
             a b sol
     Nothing ->
       Unknown sol
@@ -93,9 +94,6 @@ findArea trans sol points =
     findSol (Infeasible x) = Just x
     findSol (Optimal x) = Just x
     findSol _ = Nothing
-
-    maxX = maximum (map fst3 points)
-    fst3 (x,_,_) = x
 
 fit trans points =
   Fit
