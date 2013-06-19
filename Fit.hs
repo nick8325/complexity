@@ -69,8 +69,10 @@ instance Show Fit1 where
       ]
 
 idT = Transformation "x" id (\x -> x^2 / 2)
+logT = Transformation "log(x)" (\x -> log (x+1))
+       (\x -> (x+1) * log (x+1) - x)
 nlognT = Transformation "x*log(x)" (\x -> x * log (x+1))
-         (\x -> x**2 * log x / 2 - x^2 / 4)
+         (\x -> (x**2 - 1) * log (x+1) / 2 - (x-2)*x / 4)
 n2T = Transformation "x**2" (^2) (\x -> x^3 / 3)
 
 rename f ps = [(f x, y) | (x, y) <- ps]
@@ -98,14 +100,18 @@ fit trans points =
 
 main = do
   args <- getArgs
-  points <- fmap parse (readFile (head (args ++ ["data"])))
+  let filename = head (args ++ ["data"])
+  points <- fmap parse (readFile filename)
   let lin = fit idT points
+      logg = fit logT points
       nlogn = fit nlognT points
       quad = fit n2T points
-      theBest = foldr1 best [lin, nlogn, quad]
+      theBest = foldr1 best [lin, logg, nlogn, quad]
 
   putStrLn "=== Linear fit"
   print lin
+  putStrLn "=== Logarithmic fit"
+  print logg
   putStrLn "=== n log n fit"
   print nlogn
   putStrLn "=== Quadratic fit"
@@ -117,7 +123,7 @@ main = do
   writeFile "gnuplot" . unlines $ [
     "set term pngcairo",
     "set output \"graph.png\"",
-    "plot 'data'" ++ concat
+    "plot '" ++ filename ++ "'" ++ concat
       [ ", " ++ formula x ++ " linewidth 5"
       | x <- [above theBest, below theBest] ]
     ]

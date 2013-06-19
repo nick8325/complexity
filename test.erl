@@ -8,28 +8,51 @@ time(F) ->
     {reductions, B} = process_info(self(), reductions),
     B - A.
 
-time_sort() ->
+measure(Tests, MaxSize, Gen, Size, Eval) ->
     Self = self(),
     Print = fun(X) -> Self ! {print, X} end,
-    eqc:quickcheck(eqc:numtests(10000, eqc_gen:resize(1000,
-    ?FORALL(Xs, list(int()),
+    eqc:quickcheck(eqc:numtests(Tests, eqc_gen:resize(MaxSize,
+    ?FORALL(X, Gen,
     begin
       erlang:garbage_collect(),
-      collect(Print, {length(Xs), time(fun() -> lists:sort(Xs) end)}, true)
+      collect(Print, {Size(X), time(fun() -> Eval(X) end)}, true)
     end)))),
-    receive {print, X} -> X end.
+    receive {print, Res} -> graph(Res) end.
 
 graph(Points) ->
-    %% XVals = [ X || {{X, _}, _} <- Points ],
-    %% YVals = [ Y || {{_, Y}, _} <- Points ],
-    %% XMin = lists:min(XVals),
-    %% XMax = lists:max(XVals),
-    %% YMin = lists:min(YVals),
-    %% YMax = lists:max(YVals),
-    %% file:write_file("gnuplot",
-    %%   ["set output \"graph.png\"\n",
-    %%    io_lib:format("plot 'data' with points lt 1 pt 6 ps variable~n", [XMin, XMax, YMin, YMax])]),
     file:write_file("data",
       [ io_lib:format("~p ~p ~p~n", [X, Y, K]) || {{X, Y}, K} <- Points ]).
 
-    
+insertion_sort([]) ->
+    [];
+insertion_sort([X|Xs]) ->
+    ordsets:add_element(X, insertion_sort(Xs)).
+
+qsort([]) ->
+    [];
+qsort([X|Xs]) ->
+    qsort([Y || Y <- Xs, Y =< X]) ++
+    [X] ++
+    qsort([Y || Y <- Xs, Y >= X]).
+
+measure_sort() ->
+    measure(10000, 1000, list(int()),
+            fun length/1,
+            fun lists:sort/1).
+
+measure_isort() ->
+    measure(10000, 100, list(int()),
+            fun length/1,
+            fun insertion_sort/1).
+
+measure_qsort() ->
+    measure(10000, 100, list(int()),
+            fun length/1,
+            fun qsort/1).
+
+measure_lookup_gbsets() ->
+    measure(10000, 1000,
+            ?LET(Xs, list(int()),
+                 {int(), gb_sets:from_list(Xs)}),
+            fun({_, T}) -> gb_sets:size(T) end,
+            fun({X, T}) -> gb_sets:is_element(X, T) end).
