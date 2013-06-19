@@ -1,0 +1,9 @@
+.eqc-info
+Fit
+*.hi
+*.o
+*~
+current_counterexample.eqc
+*.beam
+*.png
+gnuplot
