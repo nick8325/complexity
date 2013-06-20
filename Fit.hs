@@ -29,6 +29,7 @@ maxX points = maximum (map fst3 points)
 --   a int(x) + bx - a int(0)
 -- = a(int(x) - int(0)) + bx
 opt trans points = [integral trans (maxX points) - integral trans 0, maxX points]
+area (Known trans maxX a b _) = a * (integral trans maxX - integral trans 0) + b * maxX
 
 data Transformation = Transformation {
   complexity_ :: String,
@@ -38,15 +39,16 @@ data Transformation = Transformation {
   }
 
 data Fit = Fit { above :: Fit1, below :: Fit1 }
-data Fit1 = Unknown Solution | Known String String Double Double Double Solution
+data Fit1 = Unknown Solution | Known Transformation Double Double Double Solution
 
 complexity :: Fit1 -> String
-complexity (Known cpx _ _ a _ _)
+complexity (Known trans _ a _ _)
   | a == 0 = "O(1)"
-  | otherwise = "O(" ++ cpx ++ ")"
+  | otherwise = "O(" ++ complexity_ trans ++ ")"
 
-formula (Known _ form _ a b _) =
-  show a ++ " * " ++ form ++ " + " ++ show b
+formula (Known trans _ a b _)
+  | a == 0 = show b
+  | otherwise = show a ++ " * " ++ formula_ trans ++ " + " ++ show b
 
 best :: Fit -> Fit -> Fit
 best (Fit a1 b1) (Fit a2 b2) =
@@ -56,8 +58,8 @@ best (Fit a1 b1) (Fit a2 b2) =
 best1 :: (Double -> Double -> Bool) -> Fit1 -> Fit1 -> Fit1
 best1 cmp x Unknown{} = x
 best1 cmp Unknown{} y = y
-best1 cmp x@(Known _ _ ax _ _ _) y@(Known _ _ ay _ _ _)
-  | cmp ax ay = x
+best1 cmp x y
+  | cmp (area x) (area y) = x
   | otherwise = y
 
 instance Show Fit where
@@ -71,10 +73,10 @@ instance Show Fit where
 
 instance Show Fit1 where
   show (Unknown sol) = " sol = " ++ show sol
-  show k@(Known _ _ area a b sol) =
+  show k@(Known _ _ a b sol) =
     unlines [
       "form = " ++ formula k,
-      "area = " ++ show area,
+      "area = " ++ show (area k),
       " sol = " ++ show sol
       ]
 
@@ -90,10 +92,7 @@ rename f ps = [(f x, y, k) | (x, y, k) <- ps]
 findArea trans sol points =
   case findSol sol of
     Just (_, [a, b]) ->
-      Known (complexity_ trans)
-            (formula_ trans)
-            (a * integral trans (maxX points) + b * maxX points)
-            a b sol
+      Known trans (maxX points) a b sol
     Nothing ->
       Unknown sol
   where
