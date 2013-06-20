@@ -1,6 +1,8 @@
 import Numeric.LinearProgramming
 import System.Environment
 import Data.Tuple
+import Data.List
+import Data.Function
 
 parse :: String -> [(Double, Double, Double)]
 parse = map (triple . map read . words) . lines
@@ -20,8 +22,11 @@ fitBelow trans points =
           [Free 2]
 
 maxX points = maximum (map fst3 points)
-  where
-    fst3 (x,_,_) = x
+fst3 (x,_,_) = x
+snd3 (_,y,_) = y
+thd3 (_,_,z) = z
+preprocess maximum points =
+  [ (x, maximum (map snd3 ps), sum (map thd3 ps)) | ps@((x,_,_):_) <- groupBy ((==) `on` fst3) points ]
 
 --   int(at+b)
 -- = a int(t) + bx
@@ -89,10 +94,10 @@ n2T = Transformation "n^2" "n**2" (^2) (\x -> x^3 / 3)
 
 rename f ps = [(f x, y, k) | (x, y, k) <- ps]
 
-findArea trans sol points =
+findArea trans sol maxX =
   case findSol sol of
     Just (_, [a, b]) ->
-      Known trans (maxX points) a b sol
+      Known trans maxX a b sol
     Nothing ->
       Unknown sol
   where
@@ -103,8 +108,11 @@ findArea trans sol points =
 
 fit trans points =
   Fit
-    (findArea trans (fitAbove trans points) points)
-    (findArea trans (fitBelow trans points) points)
+    (findArea trans (fitAbove trans pointsAbove) (maxX pointsAbove))
+    (findArea trans (fitBelow trans pointsBelow) (maxX pointsBelow))
+  where
+    pointsAbove = preprocess maximum points
+    pointsBelow = preprocess minimum points
 
 main = do
   args <- getArgs
