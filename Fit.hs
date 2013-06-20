@@ -31,16 +31,22 @@ maxX points = maximum (map fst3 points)
 opt trans points = [integral trans (maxX points) - integral trans 0, maxX points]
 
 data Transformation = Transformation {
-  name :: String,
+  complexity_ :: String,
+  formula_ :: String,
   xt :: Double -> Double,
   integral :: Double -> Double
   }
 
 data Fit = Fit { above :: Fit1, below :: Fit1 }
-data Fit1 = Unknown Solution | Known String Double Double Double Solution
+data Fit1 = Unknown Solution | Known String String Double Double Double Solution
 
-formula (Known name _ a b _) =
-  show a ++ " * " ++ name ++ " + " ++ show b
+complexity :: Fit1 -> String
+complexity (Known cpx _ _ a _ _)
+  | a == 0 = "O(1)"
+  | otherwise = "O(" ++ cpx ++ ")"
+
+formula (Known _ form _ a b _) =
+  show a ++ " * " ++ form ++ " + " ++ show b
 
 best :: Fit -> Fit -> Fit
 best (Fit a1 b1) (Fit a2 b2) =
@@ -50,7 +56,7 @@ best (Fit a1 b1) (Fit a2 b2) =
 best1 :: (Double -> Double -> Bool) -> Fit1 -> Fit1 -> Fit1
 best1 cmp x Unknown{} = x
 best1 cmp Unknown{} y = y
-best1 cmp x@(Known _ ax _ _ _) y@(Known _ ay _ _ _)
+best1 cmp x@(Known _ _ ax _ _ _) y@(Known _ _ ay _ _ _)
   | cmp ax ay = x
   | otherwise = y
 
@@ -65,26 +71,27 @@ instance Show Fit where
 
 instance Show Fit1 where
   show (Unknown sol) = " sol = " ++ show sol
-  show k@(Known name area a b sol) =
+  show k@(Known _ _ area a b sol) =
     unlines [
       "form = " ++ formula k,
       "area = " ++ show area,
       " sol = " ++ show sol
       ]
 
-idT = Transformation "x" id (\x -> x^2 / 2)
-logT = Transformation "log(x)" (\x -> log (x+1))
+idT = Transformation "n" "n" id (\x -> x^2 / 2)
+logT = Transformation "log n" "log(n)" (\x -> log (x+1))
        (\x -> (x+1) * log (x+1) - x)
-nlognT = Transformation "x*log(x)" (\x -> x * log (x+1))
+nlognT = Transformation "n log n" "n*log(n)" (\x -> x * log (x+1))
          (\x -> (x**2 - 1) * log (x+1) / 2 - (x-2)*x / 4)
-n2T = Transformation "x**2" (^2) (\x -> x^3 / 3)
+n2T = Transformation "n^2" "n**2" (^2) (\x -> x^3 / 3)
 
 rename f ps = [(f x, y, k) | (x, y, k) <- ps]
 
 findArea trans sol points =
   case findSol sol of
     Just (_, [a, b]) ->
-      Known (name trans)
+      Known (complexity_ trans)
+            (formula_ trans)
             (a * integral trans (maxX points) + b * maxX points)
             a b sol
     Nothing ->
@@ -122,8 +129,12 @@ main = do
   putStrLn "=== Best fit"
   print theBest
 
+  putStrLn $ "Worst-case complexity: " ++ complexity (above theBest)
+  putStrLn $ "Best-case complexity: " ++ complexity (below theBest)
+
   writeFile "gnuplot" . unlines $ [
     "set term pngcairo",
+    "set dummy n",
     "set output \"graph.png\"",
     "plot '" ++ filename ++ "'" ++ concat
       [ ", " ++ formula x ++ " linewidth 5"
