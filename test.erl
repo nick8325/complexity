@@ -17,11 +17,14 @@ measure(Tests, MaxSize, Gen, Size, Eval) ->
       erlang:garbage_collect(),
       collect(Print, {Size(X), time(fun() -> Eval(X) end)}, true)
     end)))),
-    receive {print, Res} -> graph(Res) end.
+    receive {print, Res} -> graph(Res), fit() end.
 
 graph(Points) ->
     file:write_file("data",
       [ io_lib:format("~p ~p ~p~n", [X, Y, K]) || {{X, Y}, K} <- Points ]).
+
+fit() ->
+    io:put_chars(os:cmd("ghc --make -O Fit && ./Fit && gnuplot -persist gnuplot")).
 
 insertion_sort([]) ->
     [];
@@ -61,3 +64,11 @@ measure_lookup_gbsets() ->
                  {int(), gb_sets:from_list(Xs)}),
             fun({_, T}) -> gb_sets:size(T) end,
             fun({X, T}) -> gb_sets:is_element(X, T) end).
+
+measure_queue() ->
+    measure(10000, 1000, list_gen(),
+            fun length/1,
+            fun(Xs) ->
+                Q = lists:foldl(fun queue:in/2, queue:new(), Xs),
+                lists:foldl(fun(_, Q2) -> element(2, queue:out(Q2)) end, Q, Xs)
+            end).

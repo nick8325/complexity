@@ -140,9 +140,7 @@ main = do
   putStrLn $ "Best-case complexity: " ++ complexity (below theBest)
 
   writeFile "gnuplot" . unlines $ [
-    "set term pngcairo",
     "set dummy n",
-    "set output \"graph.png\"",
     "plot '" ++ filename ++ "'" ++ concat
       [ ", " ++ formula x ++ " linewidth 5"
       | x <- [above theBest, below theBest] ]
