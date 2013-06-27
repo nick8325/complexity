@@ -4,10 +4,10 @@ import Data.Tuple
 import Data.List
 import Data.Function
 
-parse :: String -> [(Double, Double, Double)]
+parse :: String -> [(Double, Double, Int)]
 parse = map (triple . map read . words) . lines
   where
-    triple [x,y,z] = (x,y,z)
+    triple [x,y,z] = (x,y,truncate z)
 
 constraints f points =
   Dense [ f x y | (x, y, _) <- points ]
@@ -26,7 +26,16 @@ fst3 (x,_,_) = x
 snd3 (_,y,_) = y
 thd3 (_,_,z) = z
 preprocess maximum points =
-  [ (x, maximum (map snd3 ps), sum (map thd3 ps)) | ps@((x,_,_):_) <- groupBy ((==) `on` fst3) points ]
+  [ (x, maximum (map snd3 ps'), sum (map thd3 ps'))
+  | ps@((x,_,_):_) <- groupBy ((==) `on` fst3) points,
+    let ps' = expand ps ]
+withoutOutliers ps =
+  drop n (take (length ps - n) ps)
+  where
+    n = length ps `div` 10
+expand = concatMap expand1
+  where
+    expand1 (x, y, n) = replicate n (x, y, 1)
 
 --   int(at+b)
 -- = a int(t) + bx
