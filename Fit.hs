@@ -11,7 +11,7 @@ parse = map (triple . map read . words) . lines
     triple [x,y,z] = (truncate x,y,z)
 
 constraints f points =
-  Dense [ f x y | (x, y) <- points ]
+  Dense [ f x y | (_, x, y) <- points ]
 
 fitAbove trans points =
   simplex (Minimize (opt trans points))
@@ -22,16 +22,18 @@ fitBelow trans points =
           (constraints (\x y -> [x, 1] :<=: y) (rename (xt trans) points))
           [Free 2]
 
-maxX points = maximum (map fst points)
+fst3 (x,_,_) = x
+snd3 (_,y,_) = y
+thd3 (_,_,z) = z
+
+maxX points = maximum (map snd3 points)
 preprocess maximum points =
-  [ (x, maximum (map snd ps))
-  | ps@((x,_):_) <- groupBy ((==) `on` fst) points ]
+  [ (i, x, maximum (map thd3 ps))
+  | ps@((i, x,_):_) <- groupBy ((==) `on` snd3) points ]
 takeBest points =
-  [ (x, minimum (map thd3 ps))
-  | ps@((_, x,_):_) <- groupBy ((==) `on` fst3) (sortBy (comparing fst3) points) ]
+  [ (i, x, minimum (map thd3 ps))
+  | ps@((i, x,_):_) <- groupBy ((==) `on` fst3) (sortBy (comparing fst3) points) ]
   where
-    fst3 (x,_,_) = x
-    thd3 (_,_,z) = z
 
 --   int(at+b)
 -- = a int(t) + bx
@@ -55,6 +57,10 @@ complexity :: Fit1 -> String
 complexity (Known trans _ a _ _)
   | a == 0 = "O(1)"
   | otherwise = "O(" ++ complexity_ trans ++ ")"
+
+eval :: Fit1 -> Double -> Double
+eval (Known trans _ a b _) x =
+  a * xt trans x + b
 
 formula (Known trans _ a b _)
   | a == 0 = show b
@@ -97,7 +103,7 @@ nlognT = Transformation "n log n" "n*log(n)" (\x -> x * log (x+1))
          (\x -> (x**2 - 1) * log (x+1) / 2 - (x-2)*x / 4)
 n2T = Transformation "n^2" "n**2" (^2) (\x -> x^3 / 3)
 
-rename f ps = [(f x, y) | (x, y) <- ps]
+rename f ps = [(i, f x, y) | (i, x, y) <- ps]
 
 findArea trans sol maxX =
   case findSol sol of
@@ -145,7 +151,7 @@ main = do
   putStrLn $ "Best-case complexity: " ++ complexity (below theBest)
 
   writeFile "gnuplot-data" . unlines $
-    [ show x ++ " " ++ show y | (x, y) <- points ]
+    [ show x ++ " " ++ show y | (_, x, y) <- points ]
 
   writeFile "gnuplot" . unlines $ [
     "set dummy n",
@@ -153,3 +159,7 @@ main = do
       [ ", " ++ formula x ++ " linewidth 5"
       | x <- [above theBest, below theBest] ]
     ]
+
+  let distance (_, x, y) = y - eval (above theBest) x
+  writeFile "closest" $
+    show (fst3 (maximumBy (comparing distance) points)) ++ "."

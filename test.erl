@@ -28,7 +28,9 @@ measure(Tests, MaxSize, Gen, Size, Eval) ->
           Stride /= Tests]),
     io:format(" done! Fitting data.~n~n"),
     graph(Results),
-    fit().
+    fit(),
+    {ok, [Closest]} = file:consult(closest),
+    improve(Results, Data, Size, Eval, Closest).
 
 measure1(N, N, _Stride, _Data, _Size, _Eval, Results) ->
     Results;
@@ -39,12 +41,34 @@ measure1(M, N, Stride, Data, Size, Eval, Results) ->
     Result = {I, Size(X), time(fun() -> Eval(X) end)},
     measure1(M+1, N, Stride, Data, Size, Eval, [Result|Results]).
 
+improve(Results, Data, Size, Eval, Closest) ->
+    X = Data(Closest),
+    Length = Size(X),
+    io:format("Trying harder~n"),
+    Results1 =
+        [begin
+           io:format("."),
+           {Closest, Length, time(fun() -> Eval(X) end)}
+         end
+        || _ <- lists:seq(1, 100) ] ++ Results,
+    io:format("~n~n"),
+    graph(Results1),
+    fit(),
+    {ok, [Closest1]} = file:consult(closest),
+    case Closest == Closest1 of
+        true ->
+            io:format("That's it!~n"),
+            os:cmd("gnuplot -persist gnuplot");
+        false ->
+            improve(Results1, Data, Size, Eval, Closest1)
+    end.
+
 graph(Points) ->
     file:write_file("data",
       [ io_lib:format("~p ~p ~p~n", [I, X, Y]) || {I, X, Y} <- Points ]).
 
 fit() ->
-    io:put_chars(os:cmd("ghc --make -O Fit && ./Fit && gnuplot -persist gnuplot")).
+    io:put_chars(os:cmd("ghc --make -O Fit && ./Fit")).
 
 insertion_sort([]) ->
     [];
