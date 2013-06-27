@@ -85,13 +85,19 @@ merge([X|Xs], Ys=[Y|_]) when X =< Y ->
 merge(Xs, [Y|Ys]) ->
     [Y|merge(Xs, Ys)].
 
+noise(0) ->
+    ok;
+noise(N) ->
+    erlang:yield(),
+    noise(N-1).
+
 list_gen() ->
     frequency([{50, list(int())},
                {1, ?LET(Xs, list(int()), lists:sort(Xs))},
                {1, ?LET(Xs, list(int()), lists:reverse(lists:sort(Xs)))}]).
 
 measure_sort() ->
-    measure(100, 1000, list_gen(),
+    measure(1000, 1000, list_gen(),
             fun length/1,
             fun lists:sort/1).
 
@@ -106,7 +112,7 @@ measure_qsort() ->
             fun qsort/1).
 
 measure_msort() ->
-    measure(10000, 100, list_gen(),
+    measure(1000, 100, list_gen(),
             fun length/1,
             fun msort/1).
 
