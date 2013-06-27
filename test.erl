@@ -48,7 +48,7 @@ qsort([X|Xs]) ->
     qsort([Y || Y <- Xs, Y >= X]).
 
 list_gen() ->
-    frequency([{50, list(int())},
+    frequency([{1, list(int())},
                {1, ?LET(Xs, list(int()), lists:sort(Xs))},
                {1, ?LET(Xs, list(int()), lists:reverse(lists:sort(Xs)))}]).
 
