@@ -26,9 +26,8 @@ fst3 (x,_,_) = x
 snd3 (_,y,_) = y
 thd3 (_,_,z) = z
 preprocess maximum points =
-  [ (x, maximum (map snd3 ps'), sum (map thd3 ps'))
-  | ps@((x,_,_):_) <- groupBy ((==) `on` fst3) points,
-    let ps' = expand ps ]
+  [ (x, maximum (map snd3 ps), sum (map thd3 ps))
+  | ps@((x,_,_):_) <- groupBy ((==) `on` fst3) points ]
 withoutOutliers ps =
   drop n (take (length ps - n) ps)
   where
