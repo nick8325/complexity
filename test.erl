@@ -2,10 +2,19 @@
 -compile(export_all).
 -include_lib("eqc/include/eqc.hrl").
 
+%the_time() ->
+%    Million = 1000000,
+%    {X,Y,Z} = os:timestamp(),
+%    X*Million*Million + Y*Million*Million + Z.
+
+the_time() ->
+    {reductions, X} = process_info(self(), reductions),
+    X.
+
 time(F) ->
-    {reductions, A} = process_info(self(), reductions),
+    A = the_time(),
     F(),
-    {reductions, B} = process_info(self(), reductions),
+    B = the_time(),
     B - A.
 
 measure(Tests, MaxSize, Gen, Size, Eval) ->
