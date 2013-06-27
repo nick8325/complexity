@@ -2,14 +2,14 @@
 -compile(export_all).
 -include_lib("eqc/include/eqc.hrl").
 
-%the_time() ->
-%    Million = 1000000,
-%    {X,Y,Z} = now(),
-%    X*Million*Million + Y*Million + Z.
-
 the_time() ->
-    {reductions, X} = process_info(self(), reductions),
-    X.
+    Million = 1000000,
+    {X,Y,Z} = now(),
+    X*Million*Million + Y*Million + Z.
+
+%the_time() ->
+%    {reductions, X} = process_info(self(), reductions),
+%    X.
 
 time(F) ->
     erlang:garbage_collect(),
