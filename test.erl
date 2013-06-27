@@ -44,29 +44,29 @@ list_gen() ->
                {1, ?LET(Xs, list(int()), lists:reverse(lists:sort(Xs)))}]).
 
 measure_sort() ->
-    measure(10000, 1000, list_gen(),
+    measure(1000, 1000, list_gen(),
             fun length/1,
             fun lists:sort/1).
 
 measure_isort() ->
-    measure(10000, 100, list_gen(),
+    measure(1000, 100, list_gen(),
             fun length/1,
             fun insertion_sort/1).
 
 measure_qsort() ->
-    measure(10000, 100, list_gen(),
+    measure(1000, 100, list_gen(),
             fun length/1,
             fun qsort/1).
 
 measure_lookup_gbsets() ->
-    measure(10000, 1000,
+    measure(1000, 1000,
             ?LET(Xs, list_gen(),
                  {int(), gb_sets:from_list(Xs)}),
             fun({_, T}) -> gb_sets:size(T) end,
             fun({X, T}) -> gb_sets:is_element(X, T) end).
 
 measure_queue() ->
-    measure(10000, 1000, list_gen(),
+    measure(1000, 1000, list_gen(),
             fun length/1,
             fun(Xs) ->
                 Q = lists:foldl(fun queue:in/2, queue:new(), Xs),
