@@ -4,8 +4,8 @@
 
 %the_time() ->
 %    Million = 1000000,
-%    {X,Y,Z} = os:timestamp(),
-%    X*Million*Million + Y*Million*Million + Z.
+%    {X,Y,Z} = now(),
+%    X*Million*Million + Y*Million + Z.
 
 the_time() ->
     {reductions, X} = process_info(self(), reductions),
