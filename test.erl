@@ -91,7 +91,7 @@ list_gen() ->
                {1, ?LET(Xs, list(int()), lists:reverse(lists:sort(Xs)))}]).
 
 measure_sort() ->
-    measure(1000, 1000, list_gen(),
+    measure(100, 1000, list_gen(),
             fun length/1,
             fun lists:sort/1).
 
