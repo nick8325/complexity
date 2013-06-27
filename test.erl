@@ -12,21 +12,33 @@ the_time() ->
     X.
 
 time(F) ->
+    erlang:garbage_collect(),
     A = the_time(),
     F(),
     B = the_time(),
     B - A.
 
 measure(Tests, MaxSize, Gen, Size, Eval) ->
-    Self = self(),
-    Print = fun(X) -> Self ! {print, X} end,
-    eqc:quickcheck(eqc:numtests(Tests, eqc_gen:resize(MaxSize,
-    ?FORALL(X, Gen,
-    begin
-      erlang:garbage_collect(),
-      collect(Print, {Size(X), time(fun() -> Eval(X) end)}, true)
-    end)))),
-    receive {print, Res} -> graph(Res), fit() end.
+    {Data, _} = eqc_gen:gen(function1(Gen), MaxSize, []),
+    io:format("Running ~p tests", [Tests]),
+    Results = measure1(Tests, Data, Size, Eval, []),
+    io:format(" done! Fitting data.~n~n"),
+    graph(collate(Results)),
+    fit().
+
+measure1(0, _Data, _Size, _Eval, Results) ->
+    Results;
+measure1(N, Data, Size, Eval, Results) ->
+    io:format("."),
+    X = Data(N),
+    Result = {Size(X), time(fun() -> Eval(X) end)},
+    measure1(N-1, Data, Size, Eval, [Result|Results]).
+
+collate(Xs) -> collate(lists:sort(Xs), 1).
+collate([], _) -> [];
+collate([X], N) -> [{X, N}];
+collate([X,X|Xs], N) -> collate([X|Xs], N+1);
+collate([X,Y|Xs], N) -> [{X, N}|collate([Y|Xs], 1)].
 
 graph(Points) ->
     file:write_file("data",
@@ -74,7 +86,7 @@ merge(Xs, [Y|Ys]) ->
     [Y|merge(Xs, Ys)].
 
 list_gen() ->
-    frequency([{1, list(int())},
+    frequency([{50, list(int())},
                {1, ?LET(Xs, list(int()), lists:sort(Xs))},
                {1, ?LET(Xs, list(int()), lists:reverse(lists:sort(Xs)))}]).
 
