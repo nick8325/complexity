@@ -130,3 +130,6 @@ measure_queue() ->
                 Q = lists:foldl(fun queue:in/2, queue:new(), Xs),
                 lists:foldl(fun(_, Q2) -> element(2, queue:out(Q2)) end, Q, Xs)
             end).
+
+measure_noise() ->
+    measure(1000, 10000, nat(), fun(X) -> X end, fun noise/1).
