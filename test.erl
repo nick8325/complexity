@@ -20,29 +20,28 @@ time(F) ->
 
 measure(Tests, MaxSize, Gen, Size, Eval) ->
     {Data, _} = eqc_gen:gen(function1(Gen), MaxSize, []),
-    io:format("Running ~p tests", [Tests]),
-    Results = measure1(Tests, Data, Size, Eval, []),
+    Strides = [1, 929, 1619, 2081, 3313, 4021, 5897, 6551, 7043, 7917],
+    io:format("Running ~p tests", [Tests * length(Strides)]),
+    Results = lists:concat(
+        [ measure1(0, Tests, Stride, Data, Size, Eval, []) ||
+          Stride <- Strides,
+          Stride /= Tests]),
     io:format(" done! Fitting data.~n~n"),
-    graph(collate(Results)),
+    graph(Results),
     fit().
 
-measure1(0, _Data, _Size, _Eval, Results) ->
+measure1(N, N, _Stride, _Data, _Size, _Eval, Results) ->
     Results;
-measure1(N, Data, Size, Eval, Results) ->
+measure1(M, N, Stride, Data, Size, Eval, Results) ->
     io:format("."),
-    X = Data(N),
-    Result = {Size(X), time(fun() -> Eval(X) end)},
-    measure1(N-1, Data, Size, Eval, [Result|Results]).
-
-collate(Xs) -> collate(lists:sort(Xs), 1).
-collate([], _) -> [];
-collate([X], N) -> [{X, N}];
-collate([X,X|Xs], N) -> collate([X|Xs], N+1);
-collate([X,Y|Xs], N) -> [{X, N}|collate([Y|Xs], 1)].
+    I = ((M+1) * Stride) rem N,
+    X = Data(I),
+    Result = {I, Size(X), time(fun() -> Eval(X) end)},
+    measure1(M+1, N, Stride, Data, Size, Eval, [Result|Results]).
 
 graph(Points) ->
     file:write_file("data",
-      [ io_lib:format("~p ~p ~p~n", [X, Y, K]) || {{X, Y}, K} <- Points ]).
+      [ io_lib:format("~p ~p ~p~n", [I, X, Y]) || {I, X, Y} <- Points ]).
 
 fit() ->
     io:put_chars(os:cmd("ghc --make -O Fit && ./Fit && gnuplot -persist gnuplot")).
