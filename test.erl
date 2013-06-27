@@ -11,26 +11,38 @@ the_time() ->
     {reductions, X} = process_info(self(), reductions),
     X.
 
-time(F) ->
+time(F, X) ->
+    erlang:garbage_collect(),
     A = the_time(),
-    F(),
+    F(X),
     B = the_time(),
     B - A.
 
+data(Tests, MaxSize, Gen, Size) ->
+    {Data, _} =
+        eqc_gen:gen(vector(Tests, ?LET(X, Gen, [X|Size(X)])),
+            MaxSize, []),
+    Data.
+
 measure(Tests, MaxSize, Gen, Size, Eval) ->
-    Self = self(),
-    Print = fun(X) -> Self ! {print, X} end,
-    eqc:quickcheck(eqc:numtests(Tests, eqc_gen:resize(MaxSize,
-    ?FORALL(X, Gen,
-    begin
-      erlang:garbage_collect(),
-      collect(Print, {Size(X), time(fun() -> Eval(X) end)}, true)
-    end)))),
-    receive {print, Res} -> graph(Res), fit() end.
+    Data = data(Tests, MaxSize, Gen, Size),
+    graph(collate(measure1(Eval, Data, []))),
+    fit().
+
+measure1(_Eval, [], Results) ->
+    Results;
+measure1(Eval, [[X|Size]|Data], Results) ->
+    measure1(Eval, Data, [[Size|time(Eval, X)]|Results]).
+
+collate(Xs) -> collate(lists:sort(Xs), 1).
+collate([], _) -> [];
+collate([X], N) -> [{X, N}];
+collate([X,X|Xs], N) -> collate([X|Xs], N+1);
+collate([X,Y|Xs], N) -> [{X, N}|collate([Y|Xs], 1)].
 
 graph(Points) ->
     file:write_file("data",
-      [ io_lib:format("~p ~p ~p~n", [X, Y, K]) || {{X, Y}, K} <- Points ]).
+      [ io_lib:format("~p ~p ~p~n", [X, Y, K]) || {[X|Y], K} <- Points ]).
 
 fit() ->
     io:put_chars(os:cmd("ghc --make -O Fit && ./Fit && gnuplot -persist gnuplot")).
