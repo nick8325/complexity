@@ -47,6 +47,32 @@ qsort([X|Xs]) ->
     [X] ++
     qsort([Y || Y <- Xs, Y >= X]).
 
+msort([]) ->
+    [];
+msort(Xs=[_]) ->
+    Xs;
+msort(Xs=[X,Y]) when X =< Y ->
+    Xs;
+msort([X,Y]) ->
+    [Y,X];
+msort(Xs) ->
+    {Ys, Zs} = split(Xs, [], []),
+    merge(msort(Ys), msort(Zs)).
+
+split([], Ys, Zs) ->
+    {Ys, Zs};
+split([X|Xs], Ys, Zs) ->
+    split(Xs, [X|Zs], Ys).
+
+merge(Xs, []) ->
+    Xs;
+merge([], Ys) ->
+    Ys;
+merge([X|Xs], Ys=[Y|_]) when X =< Y ->
+    [X|merge(Xs, Ys)];
+merge(Xs, [Y|Ys]) ->
+    [Y|merge(Xs, Ys)].
+
 list_gen() ->
     frequency([{1, list(int())},
                {1, ?LET(Xs, list(int()), lists:sort(Xs))},
@@ -66,6 +92,11 @@ measure_qsort() ->
     measure(1000, 100, list_gen(),
             fun length/1,
             fun qsort/1).
+
+measure_msort() ->
+    measure(10000, 100, list_gen(),
+            fun length/1,
+            fun msort/1).
 
 measure_lookup_gbsets() ->
     measure(1000, 1000,
