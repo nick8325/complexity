@@ -19,20 +19,42 @@ time(F) ->
     B - A.
 
 measure(Tests, MaxSize, Gen, Size, Eval) ->
-    {Data, _} = eqc_gen:gen(function1(Gen), MaxSize, []),
+    measure(Tests, MaxSize, Gen, Size, Eval, fun(_) -> [] end).
+
+measure(Tests, MaxSize, Gen, Size, Eval, Opt) ->
+    Data = eqc_gen:pick(
+        function1(
+        ?LET(N, choose(0, MaxSize),
+        resize(N, Gen)))),
     io:format("Running ~p tests", [Tests]),
-    Results = measure1(Tests, Data, Size, Eval, []),
+    Results = measure1(Tests, Data, Size, Eval, Opt, []),
     io:format(" done! Fitting data.~n~n"),
     graph(collate(Results)),
     fit().
 
-measure1(0, _Data, _Size, _Eval, Results) ->
+measure1(0, _Data, _Size, _Eval, _Opt, Results) ->
     Results;
-measure1(N, Data, Size, Eval, Results) ->
+measure1(N, Data, Size, Eval, Opt, Results) ->
     io:format("."),
     X = Data(N),
-    Result = {Size(X), time(fun() -> Eval(X) end)},
-    measure1(N-1, Data, Size, Eval, [Result|Results]).
+    Result1 = {Size(X), opt(fun(Y) -> time(fun() -> Eval(Y) end) end, X, Opt, 1)},
+    Result2 = {Size(X), opt(fun(Y) -> time(fun() -> Eval(Y) end) end, X, Opt, -1)},
+    measure1(N-1, Data, Size, Eval, Opt, [Result1, Result2|Results]).
+
+opt(Time, X, Opt, Dir) ->
+    opt(Time, Time(X), X, Opt, Dir).
+
+opt(Time, Time0, X, Opt, Dir) ->
+    Times = lists:sort([{Dir * Time(Y), Y} || Y <- Opt(X) ]),
+    case Times of
+        [{Time1, Y}|_] when Time1 < Dir * Time0 ->
+            %io:format("mutated ~p (~p) to ~p (~p)~n",
+            %    [X, Time0, Y, -Time1]),
+            opt(Time, Dir * Time1, Y, Opt, Dir);
+        _ ->
+            io:format("stopped at ~p (~p) for direction ~p~n", [X, Time0, Dir]),
+            Time0
+    end.
 
 collate(Xs) -> collate(lists:sort(Xs), 1).
 collate([], _) -> [];
@@ -55,7 +77,7 @@ insertion_sort([X|Xs]) ->
 qsort([]) ->
     [];
 qsort([X|Xs]) ->
-    qsort([Y || Y <- Xs, Y =< X]) ++
+    qsort([Y || Y <- Xs, Y < X]) ++
     [X] ++
     qsort([Y || Y <- Xs, Y >= X]).
 
@@ -93,35 +115,64 @@ noise(N) ->
 
 list_gen() ->
     frequency([{50, list(int())},
-               {1, ?LET(Xs, list(int()), lists:sort(Xs))},
-               {1, ?LET(Xs, list(int()), lists:reverse(lists:sort(Xs)))}]).
+               {0, ?LET(Xs, list(int()), lists:sort(Xs))},
+               {0, ?LET(Xs, list(int()), lists:reverse(lists:sort(Xs)))}]).
+
+splits(Xs) ->
+    [ lists:split(N, Xs)
+    || N <- lists:seq(0, length(Xs)) ].
+
+mutate_list(Xs) ->
+    [  As ++ [Y] ++ Bs ++ [X] ++ Cs
+    || {As, [X|Ys]} <- splits(Xs),
+       {Bs, [Y|Cs]} <- splits(Ys) ] ++
+    eqc_gen:pick(vector(20, randomly_permute(Xs))).
+
+randomly_permute(Xs) ->
+    ?LET(I, choose(0, length(Xs)),
+    ?LET(J, choose(I, length(Xs)),
+    begin
+        {As, Ys} = lists:split(I, Xs),
+        {Bs, Cs} = lists:split(J-I, Ys),
+        ?LET(Bs1, shuffle(Bs),
+        As ++ Bs1 ++ Cs)
+    end)).
+
+mutate_gbset({X,T}) ->
+    [ {Y, T} || Y <- gb_sets:to_list(T) ] ++
+    [ {X, gb_sets:insert(Y, gb_sets:delete(Y, T))} || Y <- gb_sets:to_list(T) ].
 
 measure_sort() ->
-    measure(1000, 1000, list_gen(),
+    measure(100, 100, list_gen(),
             fun length/1,
-            fun lists:sort/1).
+            fun lists:sort/1,
+            fun mutate_list/1).
 
 measure_isort() ->
-    measure(1000, 100, list_gen(),
+    measure(100, 100, list_gen(),
             fun length/1,
-            fun insertion_sort/1).
+            fun insertion_sort/1,
+            fun mutate_list/1).
 
 measure_qsort() ->
-    measure(1000, 100, list_gen(),
+    measure(100, 100, list_gen(),
             fun length/1,
-            fun qsort/1).
+            fun qsort/1,
+            fun mutate_list/1).
 
 measure_msort() ->
-    measure(1000, 100, list_gen(),
+    measure(100, 100, list_gen(),
             fun length/1,
-            fun msort/1).
+            fun msort/1,
+            fun mutate_list/1).
 
 measure_lookup_gbsets() ->
     measure(1000, 1000,
             ?LET(Xs, list_gen(),
                  {int(), gb_sets:from_list(Xs)}),
             fun({_, T}) -> gb_sets:size(T) end,
-            fun({X, T}) -> gb_sets:is_element(X, T) end).
+            fun({X, T}) -> gb_sets:is_element(X, T) end,
+            fun mutate_gbset/1).
 
 measure_queue() ->
     measure(1000, 1000, list_gen(),
