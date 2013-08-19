@@ -37,22 +37,22 @@ measure1(0, _Data, _Size, _Eval, _Opt, Results) ->
 measure1(N, Data, Size, Eval, Opt, Results) ->
     io:format("."),
     X = Data(N),
-    Result1 = {Size(X), opt(fun(Y) -> time(fun() -> Eval(Y) end) end, X, Opt, 1)},
-    Result2 = {Size(X), opt(fun(Y) -> time(fun() -> Eval(Y) end) end, X, Opt, -1)},
+    Result1 = {Size(X), opt(fun(Y) -> time(fun() -> Eval(Y) end) end, X, Opt)},
+    Result2 = {Size(X), -opt(fun(Y) -> -time(fun() -> Eval(Y) end) end, X, Opt)},
     measure1(N-1, Data, Size, Eval, Opt, [Result1, Result2|Results]).
 
-opt(Time, X, Opt, Dir) ->
-    opt(Time, Time(X), X, Opt, Dir).
+opt(Time, X, Opt) ->
+    opt(Time, Time(X), X, Opt).
 
-opt(Time, Time0, X, Opt, Dir) ->
-    Times = lists:sort([{Dir * Time(Y), Y} || Y <- Opt(X) ]),
+opt(Time, Time0, X, Opt) ->
+    Times = lists:sort([{Time(Y), Y} || Y <- Opt(X) ]),
     case Times of
-        [{Time1, Y}|_] when Time1 < Dir * Time0 ->
+        [{Time1, Y}|_] when Time1 < Time0 ->
             %io:format("mutated ~p (~p) to ~p (~p)~n",
             %    [X, Time0, Y, -Time1]),
-            opt(Time, Dir * Time1, Y, Opt, Dir);
+            opt(Time, Time1, Y, Opt);
         _ ->
-            io:format("stopped at ~p (~p) for direction ~p~n", [X, Time0, Dir]),
+            io:format("stopped at ~p (~p)~n", [X, Time0]),
             Time0
     end.
 
