@@ -68,7 +68,8 @@ anneal1([], _Temp, _Time, TimeX, X, _Opt) ->
     {TimeX, X};
 anneal1([Y|Ys], Temp, Time, TimeX, X, Opt) ->
     TimeY = Time(Y),
-    Diff = math:exp((TimeY - TimeX) / Temp),
+    % hack: don't compute Diff if TimeX =< TimeY
+    Diff = math:exp((TimeY - max(TimeX, TimeY)) / Temp),
     Prob = probability(),
     if
         TimeX =< TimeY ->
