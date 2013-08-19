@@ -37,9 +37,49 @@ measure1(0, _Data, _Size, _Eval, _Opt, Results) ->
 measure1(N, Data, Size, Eval, Opt, Results) ->
     io:format("."),
     X = Data(N),
-    Result1 = {Size(X), opt(fun(Y) -> time(fun() -> Eval(Y) end) end, X, Opt)},
-    Result2 = {Size(X), -opt(fun(Y) -> -time(fun() -> Eval(Y) end) end, X, Opt)},
+    Result1 = {Size(X), anneal(fun(Y) -> time(fun() -> Eval(Y) end) end, X, Opt)},
+    Result2 = {Size(X), -anneal(fun(Y) -> -time(fun() -> Eval(Y) end) end, X, Opt)},
     measure1(N-1, Data, Size, Eval, Opt, [Result1, Result2|Results]).
+
+probability() ->
+    K = 65536,
+    N = eqc_gen:pick(eqc_gen:choose(0, K-1)),
+    N / K.
+
+anneal(Time, X, Opt) ->
+    TimeX = Time(X),
+    Temp = TimeX * TimeX,
+    anneal(Temp, Time, TimeX, X, Opt).
+
+anneal(Temp, Time, TimeX, X, Opt) ->
+    {TimeY, Y} = anneal1(Temp, Time, TimeX, X, Opt),
+    if
+        Temp < 1 andalso TimeX == TimeY ->
+            TimeX;
+        true ->
+            anneal(Temp * 0.8, Time, TimeY, Y, Opt)
+    end.
+
+anneal1(Temp, Time, TimeX, X, Opt) ->
+    Xs = eqc_gen:pick(eqc_gen:shuffle(Opt(X))),
+    anneal1(Xs, Temp, Time, TimeX, X, Opt).
+
+anneal1([], _Temp, _Time, TimeX, X, _Opt) ->
+    {TimeX, X};
+anneal1([Y|Ys], Temp, Time, TimeX, X, Opt) ->
+    TimeY = Time(Y),
+    Diff = math:exp((TimeY - TimeX) / Temp),
+    Prob = probability(),
+    if
+        TimeX =< TimeY ->
+            % io:format("improved ~p to ~p~n", [X, Y]),
+            anneal1(Ys, Temp, Time, TimeY, Y, Opt);
+        Diff > Prob ->
+            % io:format("decayed ~p to ~p with diff ~p (~p -> ~p) at temp ~p~n", [X, Y, Diff, TimeX, TimeY, Temp]),
+            anneal1(Ys, Temp, Time, TimeY, Y, Opt);
+        true ->
+            anneal1(Ys, Temp, Time, TimeX, X, Opt)
+    end.
 
 opt(Time, X, Opt) ->
     opt(Time, Time(X), X, Opt).
