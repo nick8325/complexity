@@ -60,8 +60,24 @@ anneal(Temp, Time, TimeX, X, Opt) ->
             anneal(Temp * 0.8, Time, TimeY, Y, Opt)
     end.
 
+sample(N, Xs) ->
+    sample(N, length(Xs), Xs).
+
+sample(N, K, Xs) when N >= K ->
+    Xs;
+sample(0, _K, _Xs) ->
+    [];
+sample(N, K, [X|Xs]) ->
+    ?LET(M, choose(1, K),
+         if
+             M =< N ->
+                 [X|sample(N-1, K-1, Xs)];
+             true ->
+                 sample(N, K-1, Xs)
+         end).
+
 anneal1(Temp, Time, TimeX, X, Opt) ->
-    Xs = eqc_gen:pick(eqc_gen:shuffle(Opt(X))),
+    Xs = eqc_gen:pick(eqc_gen:shuffle(sample(20, Opt(X)))),
     anneal1(Xs, Temp, Time, TimeX, X, Opt).
 
 anneal1([], _Temp, _Time, TimeX, X, _Opt) ->
