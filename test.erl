@@ -52,6 +52,7 @@ anneal(Time, X, Opt) ->
     anneal(Temp, Time, TimeX, X, Opt).
 
 anneal(Temp, Time, TimeX, X, Opt) ->
+    io:format("~p ~p~n", [TimeX, X]),
     {TimeY, Y} = anneal1(Temp, Time, TimeX, X, Opt),
     if
         Temp < 1 andalso TimeX == TimeY ->
@@ -77,12 +78,12 @@ sample(N, K, [X|Xs]) ->
          end).
 
 anneal1(Temp, Time, TimeX, X, Opt) ->
-    Xs = eqc_gen:pick(eqc_gen:shuffle(sample(20, Opt(X)))),
-    anneal1(Xs, Temp, Time, TimeX, X, Opt).
+    Xs = eqc_gen:pick(eqc_gen:shuffle(Opt(X))),
+    anneal2(Xs, Temp, Time, TimeX, X).
 
-anneal1([], _Temp, _Time, TimeX, X, _Opt) ->
+anneal2([], _Temp, _Time, TimeX, X) ->
     {TimeX, X};
-anneal1([Y|Ys], Temp, Time, TimeX, X, Opt) ->
+anneal2([Y|Ys], Temp, Time, TimeX, X) ->
     TimeY = Time(Y),
     % hack: don't compute Diff if TimeX =< TimeY
     Diff = math:exp((TimeY - max(TimeX, TimeY)) / Temp),
@@ -90,12 +91,12 @@ anneal1([Y|Ys], Temp, Time, TimeX, X, Opt) ->
     if
         TimeX =< TimeY ->
             % io:format("improved ~p to ~p~n", [X, Y]),
-            anneal1(Ys, Temp, Time, TimeY, Y, Opt);
+            anneal2(Ys, Temp, Time, TimeY, Y);
         Diff > Prob ->
             % io:format("decayed ~p to ~p with diff ~p (~p -> ~p) at temp ~p~n", [X, Y, Diff, TimeX, TimeY, Temp]),
-            anneal1(Ys, Temp, Time, TimeY, Y, Opt);
+            anneal2(Ys, Temp, Time, TimeY, Y);
         true ->
-            anneal1(Ys, Temp, Time, TimeX, X, Opt)
+            anneal2(Ys, Temp, Time, TimeX, X)
     end.
 
 opt(Time, X, Opt) ->
@@ -180,9 +181,18 @@ splits(Xs) ->
     || N <- lists:seq(0, length(Xs)) ].
 
 mutate_list(Xs) ->
-    [  As ++ [Y] ++ Bs ++ [X] ++ Cs
+    [ As ++ [Y] ++ Bs ++ [X] ++ Cs
     || {As, [X|Ys]} <- splits(Xs),
        {Bs, [Y|Cs]} <- splits(Ys) ] ++
+    [ Bs ++ As ++ Cs
+    || {As, Ys} <- splits(Xs),
+       {Bs, Cs} <- splits(Ys) ] ++
+    [ As ++ Cs ++ Bs
+    || {As, Ys} <- splits(Xs),
+       {Bs, Cs} <- splits(Ys) ] ++
+    [ Cs ++ Bs ++ As
+    || {As, Ys} <- splits(Xs),
+       {Bs, Cs} <- splits(Ys) ] ++
     eqc_gen:pick(vector(20, randomly_permute(Xs))).
 
 randomly_permute(Xs) ->
@@ -200,25 +210,25 @@ mutate_gbset({X,T}) ->
     [ {X, gb_sets:insert(Y, gb_sets:delete(Y, T))} || Y <- gb_sets:to_list(T) ].
 
 measure_sort() ->
-    measure(100, 100, list_gen(),
+    measure(200, 100, list_gen(),
             fun length/1,
             fun lists:sort/1,
             fun mutate_list/1).
 
 measure_isort() ->
-    measure(100, 100, list_gen(),
+    measure(20, 100, list_gen(),
             fun length/1,
             fun insertion_sort/1,
             fun mutate_list/1).
 
 measure_qsort() ->
-    measure(100, 100, list_gen(),
+    measure(20, 100, list_gen(),
             fun length/1,
             fun qsort/1,
             fun mutate_list/1).
 
 measure_msort() ->
-    measure(100, 100, list_gen(),
+    measure(20, 100, list_gen(),
             fun length/1,
             fun msort/1,
             fun mutate_list/1).
