@@ -3,6 +3,7 @@ import System.Environment
 import Data.Tuple
 import Data.List
 import Data.Function
+import Data.Ord
 
 parse :: String -> [(Double, Double, Int)]
 parse = map (triple . map read . words) . lines
@@ -45,6 +46,7 @@ opt trans points = [integral trans (maxX points) - integral trans 0, maxX points
 area (Known trans maxX a b _) = a * (integral trans maxX - integral trans 0) + b * maxX
 
 data Transformation = Transformation {
+  level_ :: Int,
   complexity_ :: String,
   formula_ :: String,
   xt :: Double -> Double,
@@ -53,6 +55,11 @@ data Transformation = Transformation {
 
 data Fit = Fit { above :: Fit1, below :: Fit1 }
 data Fit1 = Unknown Solution | Known Transformation Double Double Double Solution
+
+level :: Fit1 -> Int
+level (Known trans _ a _ _)
+  | a == 0 = 0
+  | otherwise = level_ trans
 
 complexity :: Fit1 -> String
 complexity (Known trans _ a _ _)
@@ -63,17 +70,15 @@ formula (Known trans _ a b _)
   | a == 0 = show b
   | otherwise = show a ++ " * " ++ formula_ trans ++ " + " ++ show b
 
-best :: Fit -> Fit -> Fit
-best (Fit a1 b1) (Fit a2 b2) =
-  Fit (best1 (<=) a1 a2)
-      (best1 (>=) b1 b2)
-
-best1 :: (Double -> Double -> Bool) -> Fit1 -> Fit1 -> Fit1
-best1 cmp x Unknown{} = x
-best1 cmp Unknown{} y = y
-best1 cmp x y
-  | cmp (area x) (area y) = x
-  | otherwise = y
+best :: [Fit] -> Fit
+best fs =
+  head . sortBy (comparing area_) $
+    [ Fit a b
+    | a@Known{} <- map above fs,
+      b@Known{} <- map below fs,
+      level a >= level b ]
+  where
+    area_ (Fit above below) = area above - area below
 
 instance Show Fit where
   show (Fit above below) =
@@ -93,12 +98,12 @@ instance Show Fit1 where
       " sol = " ++ show sol
       ]
 
-idT = Transformation "n" "n" id (\x -> x^2 / 2)
-logT = Transformation "log n" "log(n)" (\x -> log (x+1))
+idT = Transformation 2 "n" "n" id (\x -> x^2 / 2)
+logT = Transformation 1 "log n" "log(n)" (\x -> log (x+1))
        (\x -> (x+1) * log (x+1) - x)
-nlognT = Transformation "n log n" "n*log(n)" (\x -> x * log (x+1))
+nlognT = Transformation 3 "n log n" "n*log(n)" (\x -> x * log (x+1))
          (\x -> (x**2 - 1) * log (x+1) / 2 - (x-2)*x / 4)
-n2T = Transformation "n^2" "n**2" (^2) (\x -> x^3 / 3)
+n2T = Transformation 4 "n^2" "n**2" (^2) (\x -> x^3 / 3)
 
 rename f ps = [(f x, y, k) | (x, y, k) <- ps]
 
@@ -130,7 +135,7 @@ main = do
       logg = fit logT points
       nlogn = fit nlognT points
       quad = fit n2T points
-      theBest = foldr1 best [lin, logg, nlogn, quad]
+      theBest = best [lin, logg, nlogn, quad]
 
   putStrLn "=== Linear fit"
   print lin
