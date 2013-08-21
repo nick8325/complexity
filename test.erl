@@ -37,8 +37,8 @@ measure1(0, _Data, _Size, _Eval, _Opt, Results) ->
 measure1(N, Data, Size, Eval, Opt, Results) ->
     io:format("."),
     X = Data(N),
-    Result1 = {Size(X), anneal(fun(Y) -> time(fun() -> Eval(Y) end) end, X, Opt)},
-    Result2 = {Size(X), -anneal(fun(Y) -> -time(fun() -> Eval(Y) end) end, X, Opt)},
+    Result1 = {Size(X), opt(fun(Y) -> time(fun() -> Eval(Y) end) end, X, Opt)},
+    Result2 = {Size(X), -opt(fun(Y) -> -time(fun() -> Eval(Y) end) end, X, Opt)},
     measure1(N-1, Data, Size, Eval, Opt, [Result1, Result2|Results]).
 
 probability() ->
