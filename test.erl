@@ -56,7 +56,7 @@ anneal(Temp, Time, TimeX, X, Opt) ->
     {TimeY, Y} = anneal1(Temp, Time, TimeX, X, Opt),
     if
         Temp < 1 andalso TimeX == TimeY ->
-            opt(Time, X, Opt);
+            TimeX;
         true ->
             anneal(Temp * 0.8, Time, TimeY, Y, Opt)
     end.
@@ -75,7 +75,7 @@ take(N, Xs) ->
     Ys.
 
 anneal1(Temp, Time, TimeX, X, Opt) ->
-    Xs = eqc_gen:pick(sample(20, Opt(X))),
+    Xs = eqc_gen:pick(sample(abs(TimeX), Opt(X))),
     anneal2(Xs, Temp, Time, TimeX, X).
 
 anneal2([], _Temp, _Time, TimeX, X) ->
