@@ -155,6 +155,6 @@ main = do
   writeFile "gnuplot" . unlines $ [
     "set dummy n",
     "plot '" ++ filename ++ "'" ++ concat
-      [ ", " ++ formula x ++ " linewidth 5"
+      [ ", " ++ formula x ++ " linewidth 2"
       | x <- [above theBest, below theBest] ]
     ]
