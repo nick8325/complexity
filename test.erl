@@ -246,8 +246,9 @@ randomly_permute(Xs) ->
     end)).
 
 mutate_gbset({X,T}) ->
+    any(lists:map(fun const/1,
     [ {Y, T} || Y <- gb_sets:to_list(T) ] ++
-    [ {X, gb_sets:insert(Y, gb_sets:delete(Y, T))} || Y <- gb_sets:to_list(T) ].
+    [ {X, gb_sets:insert(Y, gb_sets:delete(Y, T))} || Y <- gb_sets:to_list(T) ])).
 
 measure_sort() ->
     measure(20, 50, list_gen(),
