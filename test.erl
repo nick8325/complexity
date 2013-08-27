@@ -37,7 +37,9 @@ measure2(MaxSize, Gen, Time) ->
 measure2(MaxSize, Gen, Time, {T, Xs}) ->
     io:format("."),
     case length(Xs) > MaxSize of
-        true -> [];
+        true ->
+            io:format(" ~w", [Xs]),
+            [];
         false ->
             Cands =
               lists:concat(eqc_gen:pick(vector(1, Gen(Xs)))),
@@ -70,6 +72,28 @@ qsort([X|Xs]) ->
     qsort([Y || Y <- Xs, Y < X]) ++
     [X] ++
     qsort([Y || Y <- Xs, Y >= X]).
+
+qsort2([]) ->
+    [];
+qsort2([X]) ->
+    [X];
+qsort2([X,Y]) when X > Y ->
+    [Y,X];
+qsort2([X,Y]) ->
+    [X,Y];
+qsort2(Xs) ->
+    Pivot = pivot(Xs),
+    qsort([X || X <- Xs, X < Pivot]) ++
+    [ X || X <- Xs, X == Pivot ] ++
+    qsort([X || X <- Xs, X > Pivot]).
+
+pivot(Xs) ->
+    Len = length(Xs),
+    [_, Pivot, _] =
+      lists:sort([lists:nth(1, Xs),
+                  lists:nth((1+Len) div 2, Xs),
+                  lists:nth(Len, Xs)]),
+    Pivot.
 
 msort([]) ->
     [];
@@ -119,6 +143,9 @@ measure_isort() ->
 
 measure_qsort() ->
     measure(10, 50, fun list_gen/1, fun qsort/1).
+
+measure_qsort2() ->
+    measure(10, 50, fun list_gen/1, fun qsort2/1).
 
 measure_msort() ->
     measure(10, 50, fun list_gen/1, fun msort/1).
