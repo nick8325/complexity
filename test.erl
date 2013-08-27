@@ -13,39 +13,37 @@ time(F) ->
     B = the_time(),
     B - A.
 
-measure(Rounds, MaxSize, Size, X0, Gen, Eval) ->
-    Results = [ measure1(MaxSize, Size, X0, Gen, Eval)
+measure(Rounds, Points, Size, X0, Gen, Eval) ->
+    eqc_gen:pick(true),
+    Results = [ measure1(Points, Size, X0, Gen, Eval)
               || _ <- lists:seq(1, Rounds) ],
     io:format("Fitting data.~n~n"),
     graph(collate(lists:concat(Results))),
     fit().
 
-measure1(MaxSize, Size, X0, Gen, Eval) ->
+measure1(Points, Size, X0, Gen, Eval) ->
     Time = fun(X) -> time(fun() -> Eval(X) end) end,
     io:format("Worst case."),
-    Worst = measure2(MaxSize, Size, X0, Gen, Time),
+    Worst = measure2(Points, Size, X0, Gen, Time),
     io:format("~nBest case."),
     Best =
         [ {Len, -T}
-        || {Len, T} <- measure2(MaxSize, Size, X0, Gen, fun(X) -> -Time(X) end) ],
+        || {Len, T} <- measure2(Points, Size, X0, Gen, fun(X) -> -Time(X) end) ],
     io:format("~n"),
     Worst ++ Best.
 
-measure2(MaxSize, Size, X0, Gen, Time) ->
-    measure3(MaxSize, Size, Gen, Time, {Time(X0), X0}).
+measure2(Points, Size, X0, Gen, Time) ->
+    measure3(Points, Size, Gen, Time, {Time(X0), X0}).
 
-measure3(MaxSize, Size, Gen, Time, {T, Xs}) ->
+measure3(0, _Size, _Gen, _Time, {_T, X}) ->
+    io:format(" ~w", [X]),
+    [];
+measure3(Points, Size, Gen, Time, {T, X}) ->
     io:format("."),
-    case Size(Xs) > MaxSize of
-        true ->
-            io:format(" ~w", [Xs]),
-            [];
-        false ->
-            Cands = eqc_gen:pick(Gen(Xs)),
-            Next =
-              lists:max([{Time(Ys), Ys} || Ys <- Cands]),
-            [{Size(Xs), T} | measure3(MaxSize, Size, Gen, Time, Next)]
-    end.
+    Cands = eqc_gen:pick(Gen(X)),
+    Next =
+        lists:max([{Time(Y), Y} || Y <- Cands]),
+    [{Size(X), T} | measure3(Points-1, Size, Gen, Time, Next)].
 
 collate(Xs) -> collate(lists:sort(Xs), 1).
 collate([], _) -> [];
