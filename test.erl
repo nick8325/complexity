@@ -148,7 +148,7 @@ measure_msort() ->
     measure(10, 50, fun length/1, [], fun list_gen/1, fun msort/1).
 
 measure_lookup_gbsets() ->
-    measure(10, 1000,
+    measure(10, 500,
             fun({_, T}) -> gb_sets:size(T) end,
             {0, gb_sets:new()},
             fun gbsets_gen/1,
