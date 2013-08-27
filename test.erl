@@ -13,98 +13,37 @@ time(F) ->
     B = the_time(),
     B - A.
 
-measure(Tests, MaxSize, Gen, Size, Eval) ->
-    measure(Tests, MaxSize, Gen, Size, Eval, fun(_) -> [] end).
-
-measure(Tests, MaxSize, Gen, Size, Eval, Opt) ->
-    Data = eqc_gen:pick(
-        function1(
-        ?LET(N, choose(0, MaxSize),
-        resize(N, Gen)))),
-    io:format("Running ~p tests", [Tests]),
-    Results = measure1(Tests, Data, Size, Eval, Opt, []),
-    io:format(" done! Fitting data.~n~n"),
-    graph(collate(Results)),
+measure(Rounds, MaxSize, Gen, Eval) ->
+    Results = [ measure1(MaxSize, Gen, Eval)
+              || _ <- lists:seq(1, Rounds) ],
+    io:format("Fitting data.~n~n"),
+    graph(collate(lists:concat(Results))),
     fit().
 
-measure1(0, _Data, _Size, _Eval, _Opt, Results) ->
-    Results;
-measure1(N, Data, Size, Eval, Opt, Results) ->
+measure1(MaxSize, Gen, Eval) ->
+    Time = fun(X) -> time(fun() -> Eval(X) end) end,
+    io:format("Worst case."),
+    Worst = measure2(MaxSize, Gen, Time),
+    io:format("~nBest case."),
+    Best =
+        [ {Len, -T}
+        || {Len, T} <- measure2(MaxSize, Gen, fun(X) -> -Time(X) end) ],
+    io:format("~n"),
+    Worst ++ Best.
+
+measure2(MaxSize, Gen, Time) ->
+    measure2(MaxSize, Gen, Time, {Time([]), []}).
+
+measure2(MaxSize, Gen, Time, {T, Xs}) ->
     io:format("."),
-    X = Data(N),
-    Result1 = {Size(X), anneal(fun(Y) -> time(fun() -> Eval(Y) end) end, X, Opt)},
-    Result2 = {Size(X), -anneal(fun(Y) -> -time(fun() -> Eval(Y) end) end, X, Opt)},
-    measure1(N-1, Data, Size, Eval, Opt, [Result1, Result2|Results]).
-
-probability() ->
-    K = 65536,
-    N = eqc_gen:pick(choose(0, K-1)),
-    N / K.
-
-anneal(Time, X, Opt) ->
-    TimeX = Time(X),
-    Temp = TimeX * TimeX,
-    anneal(Temp, Time, TimeX, X, Opt).
-
-anneal(Temp, Time, TimeX, X, Opt) ->
-    %io:format("~p ~p ~p~n", [Temp, TimeX, X]),
-    {TimeY, Y} = anneal1(Temp, Time, TimeX, X, Opt),
-    if
-        Temp < 1 andalso TimeX == TimeY ->
-            TimeX;
-        true ->
-            anneal(Temp * 0.8, Time, TimeY, Y, Opt)
-    end.
-
-sample(0, _) -> [];
-sample(N, G={M, Fun}) ->
-  ?LET(I, choose(0, M-1),
-       case Fun(I) of
-         [] -> sample(N, G);
-         [X] -> [X|sample(N-1, G)];
-         _ -> erlang:error({nondeterministic_generator, Fun(I)})
-       end).
-
-take(N, Xs) ->
-    {Ys, _Zs} = lists:split(N, Xs),
-    Ys.
-
-anneal1(Temp, Time, TimeX, X, Opt) ->
-    Xs = eqc_gen:pick(sample(abs(TimeX), Opt(X))),
-    anneal2(Xs, Temp, Time, TimeX, X).
-
-anneal2([], _Temp, _Time, TimeX, X) ->
-    {TimeX, X};
-anneal2([Y|Ys], Temp, Time, TimeX, X) ->
-    TimeY = Time(Y),
-    % hack: don't compute Diff if TimeX =< TimeY
-    Diff = math:exp((TimeY - max(TimeX, TimeY)) / Temp),
-    Prob = probability(),
-    if
-        TimeX =< TimeY ->
-            % io:format("improved ~p to ~p~n", [X, Y]),
-            anneal2(Ys, Temp, Time, TimeY, Y);
-        Diff > Prob ->
-            % io:format("decayed ~p to ~p with diff ~p (~p -> ~p) at temp ~p~n", [X, Y, Diff, TimeX, TimeY, Temp]),
-            anneal2(Ys, Temp, Time, TimeY, Y);
-        true ->
-            anneal2(Ys, Temp, Time, TimeX, X)
-    end.
-
-opt(Time, X, Opt) ->
-    io:format("opt ~p (~p)~n", [X, Time(X)]),
-    opt(Time, Time(X), X, Opt).
-
-opt(Time, Time0, X, Opt) ->
-    Times = lists:sort([{Time(Y), Y} || Y <- enumerate(Opt(X)) ]),
-    case Times of
-        [{Time1, Y}|_] when Time1 < Time0 ->
-            %io:format("mutated ~p (~p) to ~p (~p)~n",
-            %    [X, Time0, Y, -Time1]),
-            opt(Time, Time1, Y, Opt);
-        _ ->
-            io:format("stopped at ~p (~p)~n", [X, Time0]),
-            Time0
+    case length(Xs) > MaxSize of
+        true -> [];
+        false ->
+            Cands =
+              lists:concat(eqc_gen:pick(vector(1, Gen(Xs)))),
+            Next =
+              lists:max([{Time(Ys), Ys} || Ys <- Cands]),
+            [{length(Xs), T} | measure2(MaxSize, Gen, Time, Next)]
     end.
 
 collate(Xs) -> collate(lists:sort(Xs), 1).
@@ -164,52 +103,22 @@ noise(N) ->
     erlang:yield(),
     noise(N-1).
 
-list_gen() ->
-    ?SIZED(N, vector(N, int())).
+list_gen(Xs) ->
+    ?LET(X, resize(50, int()),
+         [ Ys ++ [X] ++ Zs || {Ys, Zs} <- splits(Xs) ]).
 
 splits(Xs) ->
     [ lists:split(N, Xs)
     || N <- lists:seq(0, length(Xs)) ].
 
 measure_sort() ->
-    measure(20, 50, list_gen(),
-            fun length/1,
-            fun lists:sort/1,
-            fun mutate_list/1).
+    measure(10, 50, fun list_gen/1, fun lists:sort/1).
 
 measure_isort() ->
-    measure(20, 50, list_gen(),
-            fun length/1,
-            fun insertion_sort/1,
-            fun mutate_list/1).
+    measure(10, 50, fun list_gen/1, fun insertion_sort/1).
 
 measure_qsort() ->
-    measure(20, 50, list_gen(),
-            fun length/1,
-            fun qsort/1,
-            fun mutate_list/1).
+    measure(10, 50, fun list_gen/1, fun qsort/1).
 
 measure_msort() ->
-    measure(20, 100, list_gen(),
-            fun length/1,
-            fun msort/1,
-            fun mutate_list/1).
-
-measure_lookup_gbsets() ->
-    measure(20, 1000,
-            ?LET(Xs, list_gen(),
-                 {int(), gb_sets:from_list(Xs)}),
-            fun({_, T}) -> gb_sets:size(T) end,
-            fun({X, T}) -> gb_sets:is_element(X, T) end,
-            fun mutate_gbset/1).
-
-measure_queue() ->
-    measure(200, 1000, list_gen(),
-            fun length/1,
-            fun(Xs) ->
-                Q = lists:foldl(fun queue:in/2, queue:new(), Xs),
-                lists:foldl(fun(_, Q2) -> element(2, queue:out(Q2)) end, Q, Xs)
-            end).
-
-measure_noise() ->
-    measure(1000, 10000, nat(), fun(X) -> X end, fun noise/1).
+    measure(10, 50, fun list_gen/1, fun msort/1).
