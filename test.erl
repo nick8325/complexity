@@ -13,30 +13,30 @@ time(F) ->
     B = the_time(),
     B - A.
 
-measure(Rounds, MaxSize, Gen, Eval) ->
-    Results = [ measure1(MaxSize, Gen, Eval)
+measure(Rounds, MaxSize, Size, Gen, Eval) ->
+    Results = [ measure1(MaxSize, Size, Gen, Eval)
               || _ <- lists:seq(1, Rounds) ],
     io:format("Fitting data.~n~n"),
     graph(collate(lists:concat(Results))),
     fit().
 
-measure1(MaxSize, Gen, Eval) ->
+measure1(MaxSize, Size, Gen, Eval) ->
     Time = fun(X) -> time(fun() -> Eval(X) end) end,
     io:format("Worst case."),
-    Worst = measure2(MaxSize, Gen, Time),
+    Worst = measure2(MaxSize, Size, Gen, Time),
     io:format("~nBest case."),
     Best =
         [ {Len, -T}
-        || {Len, T} <- measure2(MaxSize, Gen, fun(X) -> -Time(X) end) ],
+        || {Len, T} <- measure2(MaxSize, Size, Gen, fun(X) -> -Time(X) end) ],
     io:format("~n"),
     Worst ++ Best.
 
-measure2(MaxSize, Gen, Time) ->
-    measure2(MaxSize, Gen, Time, {Time([]), []}).
+measure2(MaxSize, Size, Gen, Time) ->
+    measure2(MaxSize, Size, Gen, Time, {Time([]), []}).
 
-measure2(MaxSize, Gen, Time, {T, Xs}) ->
+measure2(MaxSize, Size, Gen, Time, {T, Xs}) ->
     io:format("."),
-    case length(Xs) > MaxSize of
+    case Size(Xs) > MaxSize of
         true ->
             io:format(" ~w", [Xs]),
             [];
@@ -45,7 +45,7 @@ measure2(MaxSize, Gen, Time, {T, Xs}) ->
               lists:concat(eqc_gen:pick(vector(1, Gen(Xs)))),
             Next =
               lists:max([{Time(Ys), Ys} || Ys <- Cands]),
-            [{length(Xs), T} | measure2(MaxSize, Gen, Time, Next)]
+            [{Size(Xs), T} | measure2(MaxSize, Size, Gen, Time, Next)]
     end.
 
 collate(Xs) -> collate(lists:sort(Xs), 1).
@@ -136,16 +136,16 @@ splits(Xs) ->
     || N <- lists:seq(0, length(Xs)) ].
 
 measure_sort() ->
-    measure(10, 50, fun list_gen/1, fun lists:sort/1).
+    measure(10, 50, fun length/1, fun list_gen/1, fun lists:sort/1).
 
 measure_isort() ->
-    measure(10, 50, fun list_gen/1, fun insertion_sort/1).
+    measure(10, 50, fun length/1, fun list_gen/1, fun insertion_sort/1).
 
 measure_qsort() ->
-    measure(10, 50, fun list_gen/1, fun qsort/1).
+    measure(10, 50, fun length/1, fun list_gen/1, fun qsort/1).
 
 measure_qsort2() ->
-    measure(10, 50, fun list_gen/1, fun qsort2/1).
+    measure(10, 50, fun length/1, fun list_gen/1, fun qsort2/1).
 
 measure_msort() ->
-    measure(10, 50, fun list_gen/1, fun msort/1).
+    measure(10, 50, fun length/1, fun list_gen/1, fun msort/1).
