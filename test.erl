@@ -42,7 +42,7 @@ measure3(MaxSize, Size, Gen, Time, {T, Xs}) ->
             [];
         false ->
             Cands =
-              lists:concat(eqc_gen:pick(vector(1, Gen(Xs)))),
+              eqc_gen:pick(Gen(Xs)),
             Next =
               lists:max([{Time(Ys), Ys} || Ys <- Cands]),
             [{Size(Xs), T} | measure3(MaxSize, Size, Gen, Time, Next)]
