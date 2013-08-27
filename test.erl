@@ -2,11 +2,6 @@
 -compile(export_all).
 -include_lib("eqc/include/eqc.hrl").
 
-%the_time() ->
-%    Million = 1000000,
-%    {X,Y,Z} = now(),
-%    X*Million*Million + Y*Million + Z.
-
 the_time() ->
     {reductions, X} = process_info(self(), reductions),
     X.
@@ -175,80 +170,6 @@ list_gen() ->
 splits(Xs) ->
     [ lists:split(N, Xs)
     || N <- lists:seq(0, length(Xs)) ].
-
-enumerate({N, Fun}) ->
-    lists:concat([ Fun(I) || I <- lists:seq(0, N-1) ]).
-
-const(X) ->
-    {1, fun(_) -> [X] end}.
-
-either({M, Fun1}, {N, Fun2}) ->
-    {M+N,
-     fun(I) when I < M -> Fun1(I);
-        (I) -> Fun2(I - M)
-     end}.
-
-any([X]) ->
-    X;
-any([X|Xs]) ->
-    either(X, any(Xs)).
-
-pair(M, N, Fun) ->
-    {M * N,
-     fun(I) -> Fun(I rem M, I div M) end}.
-
-ordered_pair(N, Fun) ->
-    pair(N, N,
-         fun(I, J) -> Fun(min(I, J), max(I, J)) end).
-
-partition(N, Fun) ->
-    ordered_pair(N,
-                 fun(I, J) -> Fun(I, J-I) end).
-
-card(N, {M, Fun}) ->
-  {M*N,
-   fun(I) ->
-     at(I rem N, Fun(I div N))
-   end}.
-
-at(_, []) -> [];
-at(0, [X|_]) -> [X];
-at(N, [_|Xs]) -> at(N-1, Xs).
-
-mutate_list(Xs) ->
-    Len = length(Xs),
-    any(
-      [ partition(Len,
-        fun(I, J) ->
-          [ As ++ [Y] ++ Bs ++ [X] ++ Cs
-          || {As, [X|Ys]} <- [lists:split(I, Xs)],
-             {Bs, [Y|Cs]} <- [lists:split(J, Ys)] ]
-        end),
-
-        card(3,
-        partition(Len+1,
-        fun(I, J) ->
-          {As, Ys} = lists:split(I, Xs),
-          {Bs, Cs} = lists:split(J, Ys),
-          [ Bs ++ As ++ Cs,
-            As ++ Cs ++ Bs,
-            Cs ++ Bs ++ As ]
-        end))]).
-
-randomly_permute(Xs) ->
-    ?LET(I, choose(0, length(Xs)),
-    ?LET(J, choose(I, length(Xs)),
-    begin
-        {As, Ys} = lists:split(I, Xs),
-        {Bs, Cs} = lists:split(J-I, Ys),
-        ?LET(Bs1, shuffle(Bs),
-        As ++ Bs1 ++ Cs)
-    end)).
-
-mutate_gbset({X,T}) ->
-    any(lists:map(fun const/1,
-    [ {Y, T} || Y <- gb_sets:to_list(T) ] ++
-    [ {X, gb_sets:insert(Y, gb_sets:delete(Y, T))} || Y <- gb_sets:to_list(T) ])).
 
 measure_sort() ->
     measure(20, 50, list_gen(),
