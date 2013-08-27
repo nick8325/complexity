@@ -41,8 +41,7 @@ measure3(MaxSize, Size, Gen, Time, {T, Xs}) ->
             io:format(" ~w", [Xs]),
             [];
         false ->
-            Cands =
-              eqc_gen:pick(Gen(Xs)),
+            Cands = eqc_gen:pick(Gen(Xs)),
             Next =
               lists:max([{Time(Ys), Ys} || Ys <- Cands]),
             [{Size(Xs), T} | measure3(MaxSize, Size, Gen, Time, Next)]
@@ -149,3 +148,16 @@ measure_qsort2() ->
 
 measure_msort() ->
     measure(10, 50, fun length/1, [], fun list_gen/1, fun msort/1).
+
+measure_lookup_gbsets() ->
+    measure(10, 1000,
+            fun({_, T}) -> gb_sets:size(T) end,
+            {0, gb_sets:new()},
+            fun gbsets_gen/1,
+            fun({X, T}) -> gb_sets:is_element(X, T) end).
+
+gbsets_gen({X, T}) ->
+  ?LET(Y, resize(1000, int()),
+       [ {X, gb_sets:add(Y, T)},
+         {Y, T},
+         {Y, gb_sets:add(Y, T)} ]).
