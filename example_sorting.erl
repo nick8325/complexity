@@ -69,7 +69,8 @@ merge(Xs, [Y|Ys]) ->
 list_gen(Xs) ->
     ?LET(X, resize(100, int()),
     ?LET(Y, elements(non_empty(X,Xs)),
-      return([ Ys ++ [Z] ++ Zs || {Ys, Zs} <- splits(Xs), Z <- [X, Y] ]))).
+      return(insert_anywhere(X, Xs) ++
+             insert_anywhere(Y, Xs)))).
 
 non_empty(X, []) ->
     [X];
@@ -79,6 +80,9 @@ non_empty(_X, Xs) ->
 splits(Xs) ->
     [ lists:split(N, Xs)
     || N <- lists:seq(0, length(Xs)) ].
+
+insert_anywhere(X, Xs) ->
+    [ Ys ++ [X] ++ Zs || {Ys, Zs} <- splits(Xs) ].
 
 measure_sorting_algorithm(Sort) ->
     measure(20, 50, fun length/1, [], fun list_gen/1, Sort).

@@ -38,13 +38,13 @@ empty(_) ->
     false.
 
 %% Generate and interpret "commands".
-cmd(out1, Q) ->
+cmd({out,1}, Q) ->
     element(2, out1(Q));
-cmd(out2, Q) ->
+cmd({out,2}, Q) ->
     element(2, out2(Q));
-cmd(in1, Q) ->
+cmd({in,1}, Q) ->
     in1(a, Q);
-cmd(in2, Q) ->
+cmd({in,2}, Q) ->
     in2(a, Q).
 
 cmds(Cmds) ->
@@ -54,16 +54,27 @@ cmds([], Q) ->
 cmds([Cmd|Cmds], Q) ->
     cmds(Cmds, cmd(Cmd, Q)).
 
+valid_cmds(Cmds) ->
+    valid_cmds(0, Cmds).
+valid_cmds(_, []) ->
+    true;
+valid_cmds(0, [{out,_}|_]) ->
+    false;
+valid_cmds(N, [{out,_}|Cmds]) ->
+    valid_cmds(N-1, Cmds);
+valid_cmds(N, [{in,_}|Cmds]) ->
+    valid_cmds(N+1, Cmds).
+
 gen_cmds(Cmds) ->
-    Q = cmds(Cmds),
-    NewCmds =
-      [ out1 || not empty(Q) ] ++
-      [ out2 || not empty(Q) ] ++
-        [ in1, in2 ],
-    [ Cmds ++ [NewCmd] || NewCmd <- NewCmds ].
+    Candidates =
+      example_sorting:insert_anywhere({out,1}, Cmds) ++
+      example_sorting:insert_anywhere({out,2}, Cmds) ++
+      example_sorting:insert_anywhere({in,1}, Cmds) ++
+      example_sorting:insert_anywhere({in,2}, Cmds),
+    lists:filter(fun valid_cmds/1, Candidates).
 
 measure_queue() ->
-    measure(20, 100,
+    measure(5, 50,
             fun length/1,
             [],
             fun gen_cmds/1,
