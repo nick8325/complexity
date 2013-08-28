@@ -124,7 +124,7 @@ noise(N) ->
     noise(N-1).
 
 list_gen(Xs) ->
-    ?LET(X, resize(50, int()),
+    ?LET(X, resize(100, int()),
          return([ Ys ++ [X] ++ Zs || {Ys, Zs} <- splits(Xs) ])).
 
 splits(Xs) ->
@@ -132,22 +132,22 @@ splits(Xs) ->
     || N <- lists:seq(0, length(Xs)) ].
 
 measure_sort() ->
-    measure(10, 50, fun length/1, [], fun list_gen/1, fun lists:sort/1).
+    measure(20, 50, fun length/1, [], fun list_gen/1, fun lists:sort/1).
 
 measure_isort() ->
-    measure(10, 50, fun length/1, [], fun list_gen/1, fun insertion_sort/1).
+    measure(20, 50, fun length/1, [], fun list_gen/1, fun insertion_sort/1).
 
 measure_qsort() ->
-    measure(10, 50, fun length/1, [], fun list_gen/1, fun qsort/1).
+    measure(20, 50, fun length/1, [], fun list_gen/1, fun qsort/1).
 
 measure_qsort2() ->
-    measure(10, 50, fun length/1, [], fun list_gen/1, fun qsort2/1).
+    measure(20, 50, fun length/1, [], fun list_gen/1, fun qsort2/1).
 
 measure_msort() ->
-    measure(10, 50, fun length/1, [], fun list_gen/1, fun msort/1).
+    measure(20, 50, fun length/1, [], fun list_gen/1, fun msort/1).
 
 measure_lookup_gbsets() ->
-    measure(10, 500,
+    measure(20, 500,
             fun({_, T}) -> gb_sets:size(T) end,
             {0, gb_sets:new()},
             fun gbsets_gen/1,
@@ -214,7 +214,7 @@ queue_gen({_Cmd, Q}) ->
        Cmd <- cmds(Q1) ]).
 
 measure_queue() ->
-    measure(10, 50,
+    measure(20, 100,
             fun({_Cmd, Q}) -> len(Q) end,
             {in1, {[],[]}},
             fun queue_gen/1,
