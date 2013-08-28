@@ -35,15 +35,14 @@ measure1(Points, Size, X0, Gen, Eval) ->
 measure2(Points, Size, X0, Gen, Time) ->
     measure3(Points, Size, Gen, Time, {Time(X0), X0}).
 
-measure3(0, _Size, _Gen, _Time, {_T, X}) ->
+measure3(0, _Size, _Gen, _Time, {_TimeX, X}) ->
     io:format(" ~w", [X]),
     [];
-measure3(Points, Size, Gen, Time, {T, X}) ->
+measure3(Points, Size, Gen, Time, {TimeX, X}) ->
     io:format("."),
     Cands = eqc_gen:pick(Gen(X)),
-    Next =
-        lists:max([{Time(Y), Y} || Y <- Cands]),
-    [{Size(X), T} | measure3(Points-1, Size, Gen, Time, Next)].
+    Next = lists:max([{Time(Y), Y} || Y <- Cands ]),
+    [{Size(X), TimeX} | measure3(Points-1, Size, Gen, Time, Next)].
 
 collate(Xs) -> collate(lists:sort(Xs), 1).
 collate([], _) -> [];
