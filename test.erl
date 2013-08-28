@@ -125,7 +125,7 @@ noise(N) ->
 
 list_gen(Xs) ->
     ?LET(X, resize(50, int()),
-         [ Ys ++ [X] ++ Zs || {Ys, Zs} <- splits(Xs) ]).
+         return([ Ys ++ [X] ++ Zs || {Ys, Zs} <- splits(Xs) ])).
 
 splits(Xs) ->
     [ lists:split(N, Xs)
@@ -155,9 +155,10 @@ measure_lookup_gbsets() ->
 
 gbsets_gen({X, T}) ->
   ?LET(Y, resize(1000, int()),
+       return(
        [ {X, gb_sets:add(Y, T)},
          {Y, T},
-         {Y, gb_sets:add(Y, T)} ]).
+         {Y, gb_sets:add(Y, T)} ])).
 
 reverse(Xs) ->
     reverse(Xs, []).
@@ -206,10 +207,11 @@ cmds(Q) ->
     [ in1, in2 ].
 
 queue_gen({_Cmd, Q}) ->
+    return(
     [ {Cmd, Q1}
     || Cmd1 <- cmds(Q),
        Q1 <- [cmd(Cmd1, Q)],
-       Cmd <- cmds(Q1) ].
+       Cmd <- cmds(Q1) ]).
 
 measure_queue() ->
     measure(10, 50,
