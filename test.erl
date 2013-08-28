@@ -123,9 +123,15 @@ noise(N) ->
     erlang:yield(),
     noise(N-1).
 
+non_empty(X, []) ->
+    [X];
+non_empty(_X, Xs) ->
+    Xs.
+
 list_gen(Xs) ->
     ?LET(X, resize(100, int()),
-         return([ Ys ++ [X] ++ Zs || {Ys, Zs} <- splits(Xs) ])).
+    ?LET(Y, elements(non_empty(X,Xs)),
+      return([ Ys ++ [Z] ++ Zs || {Ys, Zs} <- splits(Xs), Z <- [X, Y] ]))).
 
 splits(Xs) ->
     [ lists:split(N, Xs)
