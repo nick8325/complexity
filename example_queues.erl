@@ -47,21 +47,24 @@ cmd(in1, Q) ->
 cmd(in2, Q) ->
     in2(a, Q).
 
-cmds(Q) ->
-    [ out1 || not empty(Q) ] ++
-    [ out2 || not empty(Q) ] ++
-    [ in1, in2 ].
+cmds(Cmds) ->
+    cmds(Cmds, {[],[]}).
+cmds([], Q) ->
+    Q;
+cmds([Cmd|Cmds], Q) ->
+    cmds(Cmds, cmd(Cmd, Q)).
 
-queue_gen({_Cmd, Q}) ->
-    return(
-    [ {Cmd, Q1}
-    || Cmd1 <- cmds(Q),
-       Q1 <- [cmd(Cmd1, Q)],
-       Cmd <- cmds(Q1) ]).
+gen_cmds(Cmds) ->
+    Q = cmds(Cmds),
+    NewCmds =
+      [ out1 || not empty(Q) ] ++
+      [ out2 || not empty(Q) ] ++
+        [ in1, in2 ],
+    [ Cmds ++ [NewCmd] || NewCmd <- NewCmds ].
 
 measure_queue() ->
     measure(20, 100,
-            fun({_Cmd, Q}) -> len(Q) end,
-            {in1, {[],[]}},
-            fun queue_gen/1,
-            fun({Cmd, Q}) -> cmd(Cmd, Q) end).
+            fun length/1,
+            [],
+            fun gen_cmds/1,
+            fun cmds/1).
