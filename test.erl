@@ -79,9 +79,9 @@ qsort2([X,Y]) ->
     [X,Y];
 qsort2(Xs) ->
     Pivot = pivot(Xs),
-    qsort([X || X <- Xs, X < Pivot]) ++
+    qsort2([X || X <- Xs, X < Pivot]) ++
     [ X || X <- Xs, X == Pivot ] ++
-    qsort([X || X <- Xs, X > Pivot]).
+    qsort2([X || X <- Xs, X > Pivot]).
 
 pivot(Xs) ->
     Len = length(Xs),
