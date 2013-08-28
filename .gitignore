@@ -7,3 +7,5 @@ current_counterexample.eqc
 *.beam
 *.png
 gnuplot
+\#*
+data
