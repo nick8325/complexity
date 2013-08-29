@@ -1,0 +1,10 @@
+* Get AVL trees working.
+* Maybe switch back to a single candidate at a time?
+  But still record the best test for each size.
+  Either that, or make sure to continue to the maximum size.
+* Allow the user to define size measures to help the heuristics.
+* Measure elapsed time better.
+* Merge noise branch.
+* Write generic command support.
+* "Flatten" extremely small slopes to constant functions.
+* Try congruence closure as an example.
