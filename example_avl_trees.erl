@@ -53,27 +53,27 @@ balance(
   {_,#node{
      left = {_,#node{left = L = {HL,_}, value = X, right = M}},
      value = Y, right = R = {HR,_}}})
-  when HL - HR >= 1 ->
+  when HL - HR == 1 ->
     node(L, X, node(M, Y, R));
 balance(
   {_,#node{
      left = {_, #node{left = L, value = X,
                       right = {HM, #node{left = ML, value = Y, right = MR}}}},
      value = Z, right = R = {HR, _}}})
-  when HM - HR >= 1 ->
+  when HM - HR == 1 ->
     node(node(L, X, ML), Y, node(MR, Z, R));
 balance(
   {_, #node{
      left = L = {HL, _}, value = X,
      right = {_, #node{left = M, value = Y, right = R = {HR, _}}}}})
-  when HR - HL >= 1 ->
+  when HR - HL == 1 ->
     node(node(L, X, M), Y, R);
 balance(
   {_, #node{
      left = L = {HL, _}, value = X,
      right = {_, #node{left = {HM, #node{left = ML, value = Y, right = MR}},
                    value = Z, right = R}}}})
-  when HM - HL >= 1 ->
+  when HM - HL == 1 ->
     node(node(L, X, ML), Y, node(MR, Z, R));
 balance(T) ->
   T.
@@ -89,8 +89,8 @@ keys({_,{node, L, X, R}}) ->
   keys(L) ++ [X] ++ keys(R).
 
 cmds(T) ->
-  [{insert, resize(100, int())}] ++
-  [{delete, elements(keys(T))} || keys(T) /= []].
+  [{insert, resize(100, int())} || tree_size(T) =< 50 ] ++
+  [{delete, elements(keys(T))} || tree_size(T) > 0].
 
 eval_cmd({insert, X}, T) ->
   insert(X, T);
@@ -114,7 +114,7 @@ gen_tree({Cmd, Cmds, T}) ->
      Cmds2 <- example_sorting:insert_anywhere(Cmd1, [Cmd|Cmds]) ])).
 
 measure_avl_trees() ->
-    measure(5, 50,
+    measure(20, 500,
             fun({_, _, T}) -> tree_size(T) end,
             construct([{insert,0}]),
             fun gen_tree/1,
