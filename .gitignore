@@ -9,3 +9,4 @@ current_counterexample.eqc
 gnuplot
 \#*
 data
+examples.erl
