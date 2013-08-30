@@ -70,8 +70,8 @@ formula (Known trans _ a b _)
   | a == 0 = show b
   | otherwise = show a ++ " * " ++ formula_ trans ++ " + " ++ show b
 
-best :: [Fit] -> Fit
-best fs =
+bestOf :: [Fit] -> Fit
+bestOf fs =
   head . sortBy (comparing area_) $
     [ Fit a b
     | a@Known{} <- map above fs,
@@ -119,23 +119,24 @@ findArea trans sol maxX =
     findSol (Optimal x) = Just x
     findSol _ = Nothing
 
-fit trans points =
+fit trans (worst, best) =
   Fit
-    (findArea trans (fitAbove trans pointsAbove) (maxX pointsAbove))
-    (findArea trans (fitBelow trans pointsBelow) (maxX pointsBelow))
+    (findArea trans (fitAbove trans pointsAbove) (maxX worst))
+    (findArea trans (fitBelow trans pointsBelow) (maxX best))
   where
     pointsAbove = preprocess maximum points
     pointsBelow = preprocess minimum points
+    points = worst ++ best
 
 main = do
-  args <- getArgs
-  let filename = head (args ++ ["data"])
-  points <- fmap parse (readFile filename)
-  let lin = fit idT points
+  worst <- fmap parse (readFile "worst")
+  best <- fmap parse (readFile "best")
+  let points = (worst, best)
+      lin = fit idT points
       logg = fit logT points
       nlogn = fit nlognT points
       quad = fit n2T points
-      theBest = best [lin, logg, nlogn, quad]
+      theBest = bestOf [lin, logg, nlogn, quad]
 
   putStrLn "=== Linear fit"
   print lin
@@ -154,7 +155,7 @@ main = do
 
   writeFile "gnuplot" . unlines $ [
     "set dummy n",
-    "plot '" ++ filename ++ "'" ++ concat
+    "plot 'worst', 'best'" ++ concat
       [ ", " ++ formula x ++ " linewidth 2"
       | x <- [above theBest, below theBest] ]
     ]

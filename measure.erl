@@ -10,11 +10,12 @@ measure(Rounds, Points, Size, X0, Gen, Eval) ->
     eqc_gen:pick(true),
     Time = fun(X) -> timing:time(Eval, [X]) end,
     Results =
-      [ round(worst, Points, Size, X0, Gen, Time) ++
-        round(best, Points, Size, X0, Gen, Time)
+      [ {round(worst, Points, Size, X0, Gen, Time),
+         round(best, Points, Size, X0, Gen, Time)}
       || _ <- lists:seq(1, Rounds) ],
     io:format("Fitting data.~n~n"),
-    fit:fit(lists:concat(Results)).
+    {Worsts, Bests} = lists:unzip(Results),
+    fit:fit(lists:concat(Worsts), lists:concat(Bests)).
 
 type_name(worst) -> "Worst";
 type_name(best) -> "Best".
