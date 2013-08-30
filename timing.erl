@@ -1,6 +1,6 @@
 %% Time how long an operation takes.
 -module(timing).
--export([time/1, time/2]).
+-export([time/1, time/2, time1/1]).
 
 the_time() ->
     {reductions, X} = process_info(self(), reductions),
@@ -15,3 +15,6 @@ time(Fun) ->
 
 time(Fun, Args) ->
     time(fun() -> apply(Fun, Args) end).
+
+time1(Fun) ->
+    fun(X) -> time(Fun, [X]) end.

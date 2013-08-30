@@ -3,6 +3,7 @@
 -module(example_queues).
 -compile(export_all).
 -import(measure, [measure/6]).
+-import(timing, [time1/1]).
 -include_lib("eqc/include/eqc.hrl").
 
 %% Argh! lists:reverse makes a constant number of reductions.
@@ -79,4 +80,4 @@ measure_queue() ->
             fun length/1,
             [],
             fun gen_cmds/1,
-            fun cmds/1).
+            time1(fun cmds/1)).

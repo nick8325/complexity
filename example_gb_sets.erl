@@ -2,6 +2,7 @@
 -module(example_gb_sets).
 -compile(export_all).
 -import(measure, [measure/6]).
+-import(timing, [time1/1]).
 -include_lib("eqc/include/eqc.hrl").
 
 measure_lookup_gbsets() ->
@@ -53,4 +54,4 @@ measure_gb_sets() ->
             fun({_, Xs, _}) -> length(Xs) end,
             construct([{insert,0}]),
             fun gen_tree/1,
-            fun({X, Xs, _T}) -> construct([X|Xs]) end).
+            time1(fun({X, Xs, _T}) -> construct([X|Xs]) end)).

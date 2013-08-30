@@ -2,6 +2,7 @@
 -module(example_trees).
 -compile(export_all).
 -import(measure, [measure/6]).
+-import(timing, [time1/1]).
 -include_lib("eqc/include/eqc.hrl").
 
 member(X, {node, _, X, _}) ->
@@ -50,4 +51,4 @@ measure_trees() ->
             fun({_, _, T}) -> tree_size(T) end,
             {0, [], nil},
             fun gen_tree/1,
-            fun({X, _Xs, T}) -> insert(X, T) end).
+            time1(fun({X, _Xs, T}) -> insert(X, T) end)).
