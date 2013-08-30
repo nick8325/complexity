@@ -1,6 +1,6 @@
-%% A queues example. Implements a double-ended queue.
-%% Alternating removing from both ends causes bad time complexity.
--module(example_queues).
+%% A queues example. Implements a double-ended queue, correctly
+%% (unlike examples_queues.erl).
+-module(example_deques).
 -compile(export_all).
 -import(measure, [measure/6]).
 -include_lib("eqc/include/eqc.hrl").
@@ -13,6 +13,10 @@ reverse([], Ys) ->
 reverse([X|Xs], Ys) ->
     reverse(Xs, [X|Ys]).
 
+reverse_split([X]) -> {[X], []};
+reverse_split(Xs) ->
+    lists:split(length(Xs) div 2, reverse(Xs)).
+
 in1(X, {Xs, Ys}) ->
     {[X|Xs], Ys}.
 in2(Y, {Xs, Ys}) ->
@@ -20,15 +24,15 @@ in2(Y, {Xs, Ys}) ->
 out1({[], []}) ->
     error(empty_queue);
 out1({[], Ys}) ->
-    [X|Xs] = reverse(Ys),
-    {X, {Xs, []}};
+    {[X|Xs], Zs} = reverse_split(Ys),
+    {X, {Xs, Zs}};
 out1({[X|Xs], Ys}) ->
     {X, {Xs, Ys}}.
 out2({[], []}) ->
     error(empty_queue);
 out2({Xs, []}) ->
-    [Y|Ys] = reverse(Xs),
-    {Y, {[], Ys}};
+    {[Y|Ys], Zs} = reverse_split(Xs),
+    {Y, {Zs, Ys}};
 out2({Xs, [Y|Ys]}) ->
     {Y, {Xs, Ys}}.
 len({Xs, Ys}) ->
@@ -74,7 +78,7 @@ gen_cmds(Cmds) ->
       example_sorting:insert_anywhere({in,2}, Cmds),
     lists:filter(fun valid_cmds/1, Candidates).
 
-measure_queue() ->
+measure_deque() ->
     measure(5, 50,
             fun length/1,
             [],
