@@ -110,7 +110,14 @@ rename f ps = [(f x, y, k) | (x, y, k) <- ps]
 findArea trans sol maxX =
   case findSol sol of
     Just (_, [a, b]) ->
-      Known trans maxX a b sol
+      let
+        (a', b')
+          | maxY - minY <= 0.05 * minY = (0, maxY)
+          | otherwise = (a, b)
+        minY = xt trans 0
+        maxY = xt trans maxX
+      in
+        Known trans maxX a' b' sol
     Nothing ->
       Unknown sol
   where
