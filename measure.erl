@@ -6,7 +6,7 @@
 -record(point, {size, time, value}).
 -record(candidate, {size, time, value, depth}).
 
-measure(Rounds, Points, Size, X0, Gen, Eval) ->
+measure(Rounds, Points, Size, X0, Gen, Time) ->
     eqc_gen:pick(true),
     Results =
       [ {round(worst, Points, Size, X0, Gen, Time),
