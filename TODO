@@ -6,5 +6,4 @@
 * Measure elapsed time better.
 * Merge noise branch.
 * Write generic command support.
-* "Flatten" extremely small slopes to constant functions.
 * Try congruence closure as an example.
