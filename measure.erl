@@ -6,11 +6,11 @@
 -record(point, {size, time, value}).
 -record(candidate, {size, time, value, depth}).
 
-measure(Rounds, Points, Size, X0, Gen, Time) ->
+measure(Rounds, Points, Size, Gen0, Gen, Time) ->
     eqc_gen:pick(true),
     Results =
-      [ {round(worst, Points, Size, X0, Gen, Time),
-         round(best, Points, Size, X0, Gen, Time)}
+      [ {round(worst, Points, Size, Gen0, Gen, Time),
+         round(best, Points, Size, Gen0, Gen, Time)}
       || _ <- lists:seq(1, Rounds) ],
     io:format("Fitting data.~n~n"),
     {Worsts, Bests} = lists:unzip(Results),
@@ -21,11 +21,11 @@ type_name(best) -> "Best".
 type_multiplier(worst) -> 1;
 type_multiplier(best) -> -1.
 
-round(Type, Points, Size, X0, Gen, Time) ->
+round(Type, Points, Size, Gen0, Gen, Time) ->
     io:format("~s case.", [type_name(Type)]),
     DirectedTime =
         fun(X) -> type_multiplier(Type) * Time(X) end,
-    Result = run(Points, Size, X0, Gen, DirectedTime),
+    Result = run(Points, Size, Gen0, Gen, DirectedTime),
     io:format("~n"),
     [ {Len, type_multiplier(Type) * T}
     || {Len, T} <- Result ].
@@ -53,7 +53,8 @@ remove_cand(Queue) ->
             {found, Cand, Queue1}
     end.
 
-run(Points, Size, X0, Gen, Time) ->
+run(Points, Size, Gen0, Gen, Time) ->
+    X0 = eqc_gen:pick(Gen0),
     Cand = #candidate{value = X0, depth = Points, time = Time(X0), size = Size(X0)},
     loop(Size, Gen, Time, gb_trees:empty(),
          insert_cand(Cand, priority_queue:new())).

@@ -1,4 +1,4 @@
-ERL_FILES = example_gb_sets.erl example_queues.erl example_deques.erl example_sorting.erl example_trees.erl example_avl_trees.erl fit.erl measure.erl timing.erl priority_queue.erl
+ERL_FILES = example_gb_sets.erl example_queues.erl example_deques.erl example_sorting.erl example_trees.erl example_avl_trees.erl fit.erl measure.erl timing.erl priority_queue.erl commands.erl commands.erl
 BEAM_FILES = $(ERL_FILES:.erl=.beam) examples.beam
 
 .PHONY: all clean

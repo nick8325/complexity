@@ -21,63 +21,37 @@ in2(Y, {Xs, Ys}) ->
 out1({[], []}) ->
     error(empty_queue);
 out1({[], Ys}) ->
-    [X|Xs] = reverse(Ys),
-    {X, {Xs, []}};
-out1({[X|Xs], Ys}) ->
-    {X, {Xs, Ys}}.
+    [_X|Xs] = reverse(Ys),
+    {Xs, []};
+out1({[_X|Xs], Ys}) ->
+    {Xs, Ys}.
 out2({[], []}) ->
     error(empty_queue);
 out2({Xs, []}) ->
-    [Y|Ys] = reverse(Xs),
-    {Y, {[], Ys}};
-out2({Xs, [Y|Ys]}) ->
-    {Y, {Xs, Ys}}.
-len({Xs, Ys}) ->
-    length(Xs) + length(Ys).
+    [_Y|Ys] = reverse(Xs),
+    {[], Ys};
+out2({Xs, [_Y|Ys]}) ->
+    {Xs, Ys}.
 empty({[], []}) ->
     true;
 empty(_) ->
     false.
+len({Xs, Ys}) ->
+    length(Xs) + length(Ys).
 
-%% Generate and interpret "commands".
-cmd({out,1}, Q) ->
-    element(2, out1(Q));
-cmd({out,2}, Q) ->
-    element(2, out2(Q));
-cmd({in,1}, Q) ->
-    in1(a, Q);
-cmd({in,2}, Q) ->
-    in2(a, Q).
-
-cmds(Cmds) ->
-    cmds(Cmds, {[],[]}).
-cmds([], Q) ->
-    Q;
-cmds([Cmd|Cmds], Q) ->
-    cmds(Cmds, cmd(Cmd, Q)).
-
-valid_cmds(Cmds) ->
-    valid_cmds(0, Cmds).
-valid_cmds(_, []) ->
-    true;
-valid_cmds(0, [{out,_}|_]) ->
-    false;
-valid_cmds(N, [{out,_}|Cmds]) ->
-    valid_cmds(N-1, Cmds);
-valid_cmds(N, [{in,_}|Cmds]) ->
-    valid_cmds(N+1, Cmds).
-
-gen_cmds(Cmds) ->
-    Candidates =
-      example_sorting:insert_anywhere({out,1}, Cmds) ++
-      example_sorting:insert_anywhere({out,2}, Cmds) ++
-      example_sorting:insert_anywhere({in,1}, Cmds) ++
-      example_sorting:insert_anywhere({in,2}, Cmds),
-    lists:filter(fun valid_cmds/1, Candidates).
+size(Q, _) ->
+    len(Q).
+initial() ->
+    {[],[]}.
+commands(Q, _) ->
+    [cmd(in1, [a]), cmd(in2, [a])] ++
+    [cmd(out1, []) || len(Q) > 0] ++
+    [cmd(out2, []) || len(Q) > 0].
+valid({call, _, X, _}, Q, _) when X == out1; X == out2 ->
+    len(Q) > 0.
+amortised() ->
+    true.
+cmd(X, Args) -> {call, ?MODULE, X, Args ++ [{var, value}]}.
 
 measure_queue() ->
-    measure(5, 50,
-            fun length/1,
-            [],
-            fun gen_cmds/1,
-            time1(fun cmds/1)).
+    commands:measure(5, 50, ?MODULE).
