@@ -39,8 +39,6 @@ empty(_) ->
 len({Xs, Ys}) ->
     length(Xs) + length(Ys).
 
-size(Q, _) ->
-    len(Q).
 initial() ->
     {[],[]}.
 commands(Q, _) ->
