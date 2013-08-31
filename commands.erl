@@ -64,10 +64,11 @@ gen(Spec = #spec{commands = Commands, query = Query}, Test) ->
             ?LET(Cmd, eqc_gen:elements(filter_out(Query, Cands)),
             gen(Spec, Test#test{query = Cmd}));
         false ->
+            eqc_gen:return(
             lists:concat(
             [ test(Spec, Cmds)
             || Cmd <- Cands,
-               Cmds <- insert_anywhere(Spec, Cmd, [Test#test.query|Test#test.commands]) ])
+               Cmds <- insert_anywhere(Spec, Cmd, [Test#test.query|Test#test.commands]) ]))
     end).
 
 eval(Test) ->
@@ -103,15 +104,12 @@ test_commands(Spec = #spec{valid = Valid, time = Time, query = Query}, [Cmd|Cmds
             case test_commands(Spec, Cmds) of
                 bad -> bad;
                 {ok, Value, Time0} ->
-                    case true of %Valid(Cmd, Value, Cmds) of
+                    case Valid(Cmd, Value, Cmds) of
                         false -> bad;
                         true ->
                             Test = #test{query = Cmd, value = Value},
-                            case catch {ok, timing:time_and_result(fun() -> eval(Test) end)} of
-                                {ok, {Time1, Value1}} ->
-                                    {ok, Value1, Time(Cmd) * Time1 + Time0};
-                                {'EXIT', _} -> bad
-                            end
+                            {Time1, Value1} = timing:time_and_result(fun() -> eval(Test) end),
+                            {ok, Value1, Time(Cmd) * Time1 + Time0}
                     end
             end
     end.
