@@ -16,4 +16,4 @@ examples.erl: $(ERL_FILES)
 	grep 'measure_.*()' $^ | sed 's/^\(.*\)\.erl:measure_\(.*\)().*$$/\2() -> \1:measure_\2()./' >> $@
 
 clean:
-	rm -f Fit Fit.o Fit.hi $(BEAM_FILES) examples.erl gnuplot data
+	rm -f Fit Fit.o Fit.hi $(BEAM_FILES) examples.erl gnuplot best worst
