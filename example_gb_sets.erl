@@ -10,7 +10,7 @@ measure_lookup_gbsets() ->
             fun({_, T}) -> gb_sets:size(T) end,
             {0, gb_sets:new()},
             fun gb_sets_gen/1,
-            fun({X, T}) -> gb_sets:is_element(X, T) end).
+            time1(fun({X, T}) -> gb_sets:is_element(X, T) end)).
 
 gb_sets_gen({X, T}) ->
   ?LET(Y, resize(1000, int()),
