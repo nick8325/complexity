@@ -11,6 +11,9 @@ node(L={HL,_}, X, R={HR,_}) ->
   {1 + max(HL, HR),
    #node{left = L, value = X, right = R}}.
 
+height({H, _}) ->
+    H.
+
 member(X, {_, #node{value = X}}) ->
     true;
 member(X, {_, #node{left = L, value = Y}})

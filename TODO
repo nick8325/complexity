@@ -7,3 +7,5 @@
 * Merge noise branch.
 * Write generic command support.
 * Try congruence closure as an example.
+* Fix AVL example by: measuring the maximum height of any intermediate
+  tree; using depth as the complexity measure instead of lookup time.
