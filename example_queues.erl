@@ -76,7 +76,7 @@ gen_cmds(Cmds) ->
     lists:filter(fun valid_cmds/1, Candidates).
 
 measure_queue() ->
-    measure(5, 50,
+    measure(1, 50,
             fun length/1,
             [],
             fun gen_cmds/1,
