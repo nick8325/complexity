@@ -82,6 +82,6 @@ loop(Size, Gen, Time, Best, Queue) ->
 
 finished(Best) ->
     Last = lists:last(gb_trees:values(Best)),
-    io:format("~n~w~n", [Last#point.value]),
+    io:format("~n~p~n", [Last#point.value]),
     [{Size, Time}
     || #point{size = Size, time = Time} <- gb_trees:values(Best)].
