@@ -9,9 +9,9 @@
 measure(Rounds, Points, Size, X0, Gen, Time) ->
     eqc_gen:pick(true),
     Results =
-      [ {round(worst, Points, Size, X0, Gen, Time),
-         round(best, Points, Size, X0, Gen, Time)}
-      || _ <- lists:seq(1, Rounds) ],
+      [ {round(I*2-1, worst, Points, Size, X0, Gen, Time),
+         round(I*2, best, Points, Size, X0, Gen, Time)}
+      || I <- lists:seq(1, Rounds) ],
     io:format("Fitting data.~n~n"),
     {Worsts, Bests} = lists:unzip(Results),
     fit:fit(lists:concat(Worsts), lists:concat(Bests)).
@@ -21,8 +21,8 @@ type_name(best) -> "Best".
 type_multiplier(worst) -> 1;
 type_multiplier(best) -> -1.
 
-round(Type, Points, Size, X0, Gen, Time) ->
-    io:format("~s case.", [type_name(Type)]),
+round(I, Type, Points, Size, X0, Gen, Time) ->
+    io:format("~p. ~s case.", [I, type_name(Type)]),
     DirectedTime =
         fun(X) -> type_multiplier(Type) * Time(X) end,
     Result = run(Points, Size, X0, Gen, DirectedTime),
@@ -82,6 +82,6 @@ loop(Size, Gen, Time, Best, Queue) ->
 
 finished(Best) ->
     Last = lists:last(gb_trees:values(Best)),
-    io:format(" ~w", [Last#point.value]),
+    io:format("~n~w~n", [Last#point.value]),
     [{Size, Time}
     || #point{size = Size, time = Time} <- gb_trees:values(Best)].
