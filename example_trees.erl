@@ -1,8 +1,9 @@
 %% Unbalanced binary search trees.
 -module(example_trees).
 -compile(export_all).
--import(measure, [measure/6]).
+-import(measure, [measure/4]).
 -import(timing, [time1/1]).
+-include("measure.hrl").
 -include_lib("eqc/include/eqc.hrl").
 
 member(X, {node, _, X, _}) ->
@@ -48,7 +49,5 @@ gen_tree({X, Xs, _T}) ->
 
 measure_trees() ->
     measure(5, 50,
-            fun({_, _, T}) -> tree_size(T) end,
-            {0, [], nil},
-            fun gen_tree/1,
-            time1(fun({X, _Xs, T}) -> insert(X, T) end)).
+            #family{initial={0, [], nil}, grow=fun gen_tree/1},
+            #axes{size=fun({_,_,T}) -> tree_size(T) end, time=time1(fun({X, _Xs, T}) -> insert(X, T) end)}).

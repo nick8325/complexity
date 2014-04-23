@@ -1,87 +1,53 @@
 %% The main module.
 -module(measure).
--export([measure/6]).
+-export([measure/4]).
+-include("measure.hrl").
 -include_lib("eqc/include/eqc.hrl").
 
--record(point, {size, time, value}).
--record(candidate, {size, time, value, depth}).
+measure(Rounds, MaxSize, Family, Axes) ->
+  eqc_gen:pick(true),
+  Results =
+    [ round(I, MaxSize, Family, Axes)
+    || I <- lists:seq(1, Rounds) ],
+  io:format("Fitting data.~n~n"),
+  Results1 =
+    [{-N, X} || #point{coords=[N,X|_]} <- lists:concat(Results) ],
+  fit:fit(Results1, Results1).
 
-measure(Rounds, Points, Size, X0, Gen, Time) ->
-    eqc_gen:pick(true),
-    Results =
-      [ {round(I*2-1, worst, Points, Size, X0, Gen, Time),
-         round(I*2, best, Points, Size, X0, Gen, Time)}
-      || I <- lists:seq(1, Rounds) ],
-    io:format("Fitting data.~n~n"),
-    {Worsts, Bests} = lists:unzip(Results),
-    fit:fit(lists:concat(Worsts), lists:concat(Bests)).
+round(I, MaxSize, Family, Axes) ->
+  io:format("~p.", [I]),
+  Frontier = #frontier{inert = [], ert = [point(Family#family.initial, Axes)]},
+  Result = run(Frontier, MaxSize, Family, Axes),
+  io:format("~n"),
+  Result.
 
-type_name(worst) -> "Worst";
-type_name(best) -> "Best".
-type_multiplier(worst) -> 1;
-type_multiplier(best) -> -1.
+run(#frontier{inert = Inert, ert = []}, _, _, _) ->
+  Inert;
+run(#frontier{inert = Inert, ert = [Cand|Ert]}, MaxSize, Family=#family{grow = Grow}, Axes) ->
+  Frontier1 = #frontier{inert = [Cand|Inert], ert = Ert},
+  Z = eqc_gen:pick(Grow(Cand#point.value)),
+  Cands = [ point(Value, Axes) || Value <- Z ],
+  Cands1 = [ C || C=#point{coords=[Size|_]} <- Cands, -Size =< MaxSize ],
+  io:format("."),
+  run(add_cands_to_frontier(Cands1, Frontier1), MaxSize, Family, Axes).
 
-round(I, Type, Points, Size, X0, Gen, Time) ->
-    io:format("~p. ~s case.", [I, type_name(Type)]),
-    DirectedTime =
-        fun(X) -> type_multiplier(Type) * Time(X) end,
-    Result = run(Points, Size, X0, Gen, DirectedTime),
-    io:format("~n"),
-    [ {Len, type_multiplier(Type) * T}
-    || {Len, T} <- Result ].
+point(Value, Axes) ->
+  Funs = [negate(Axes#axes.size), Axes#axes.time|Axes#axes.measurements],
+  #point{value = Value, coords = [ F(Value) || F <- Funs ]}.
 
-insert(Point = #point{size = Size, time = Time}, Tree) ->
-    case gb_trees:lookup(Size, Tree) of
-        {value, Existing} when Existing#point.time >= Time ->
-            not_optimal;
-        _ ->
-            {optimal, gb_trees:enter(Size, Point, Tree)}
-    end.
+negate(F) -> fun(X) -> -F(X) end.
 
-insert_cand(Cand = #candidate{size = Size, time = Time}, Queue) ->
-    priority_queue:insert({Size, -Time, Cand}, Queue).
+add_cands_to_frontier(Cands, Frontier) ->
+  lists:foldl(fun add_to_frontier/2, Frontier, Cands).
 
-insert_cands([], H) ->
-    H;
-insert_cands([X|Xs], H) ->
-    insert_cands(Xs, insert_cand(X, H)).
+add_to_frontier(Cand, Frontier=#frontier{inert=Inert, ert=Ert}) ->
+  case [ X || X <- Inert ++ Ert, dominates(X, Cand) ] of
+    [_|_] -> Frontier;
+    [] ->
+      Inert1 = [ X || X <- Inert, not dominates(Cand, X) ],
+      Ert1 = [ X || X <- Ert, not dominates(Cand, X) ],
+      #frontier{inert=Inert1, ert=[Cand|Ert1]}
+  end.
 
-remove_cand(Queue) ->
-    case priority_queue:remove_min(Queue) of
-        empty -> empty;
-        {found, {_, _, Cand}, Queue1} ->
-            {found, Cand, Queue1}
-    end.
-
-run(Points, Size, X0, Gen, Time) ->
-    Cand = #candidate{value = X0, depth = Points, time = Time(X0), size = Size(X0)},
-    loop(Size, Gen, Time, gb_trees:empty(),
-         insert_cand(Cand, priority_queue:new())).
-
-loop(Size, Gen, Time, Best, Queue) ->
-    case remove_cand(Queue) of
-        empty ->
-            finished(Best);
-        {found, #candidate{size = SizeX, time = TimeX, value = X, depth = Depth}, Queue1} ->
-            Point = #point{size = SizeX,
-                           time = TimeX,
-                           value = X},
-            case insert(Point, Best) of
-                not_optimal ->
-                    loop(Size, Gen, Time, Best, Queue1);
-                {optimal, Best1} ->
-                    io:format("."),
-                    Cands =
-                      [ #candidate{value = Y, depth = Depth-1, size = Size(Y), time = Time(Y)}
-                      || Depth > 0,
-                         Y <- eqc_gen:pick(Gen(X)) ],
-                    loop(Size, Gen, Time, Best1,
-                         insert_cands(Cands, Queue1))
-            end
-    end.
-
-finished(Best) ->
-    Last = lists:last(gb_trees:values(Best)),
-    io:format("~n~p~n", [Last#point.value]),
-    [{Size, Time}
-    || #point{size = Size, time = Time} <- gb_trees:values(Best)].
+dominates(X, Y) ->
+  lists:all(fun({A, B}) -> A >= B end, lists:zip(X#point.coords, Y#point.coords)).

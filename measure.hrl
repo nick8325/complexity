@@ -1,0 +1,4 @@
+-record(point, {value, coords}).
+-record(axes, {size, time, measurements = []}).
+-record(family, {initial, grow}).
+-record(frontier, {inert, ert}).

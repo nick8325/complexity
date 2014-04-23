@@ -1,9 +1,10 @@
 % Sorting examples.
 -module(example_sorting).
 -compile(export_all).
--import(measure, [measure/6]).
+-import(measure, [measure/4]).
 -import(timing, [time1/1]).
 -include_lib("eqc/include/eqc.hrl").
+-include("measure.hrl").
 
 %% A variety of sorting algorithms.
 insertion_sort([]) ->
@@ -86,7 +87,10 @@ insert_anywhere(X, Xs) ->
     [ Ys ++ [X] ++ Zs || {Ys, Zs} <- splits(Xs) ].
 
 measure_sorting_algorithm(Sort) ->
-    measure(20, 50, fun length/1, [], fun list_gen/1, time1(Sort)).
+  measure(20, 50,
+          #family{initial = [], grow = fun list_gen/1},
+          #axes{size = fun length/1,
+                time = time1(Sort)}).
 
 measure_sort() ->
     measure_sorting_algorithm(fun lists:sort/1).

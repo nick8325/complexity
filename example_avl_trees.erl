@@ -1,8 +1,9 @@
 %% AVL trees, but with normal BST deletion.
 -module(example_avl_trees).
 -compile(export_all).
--import(measure, [measure/6]).
+-import(measure, [measure/4]).
 -import(timing, [time1/1]).
+-include("measure.hrl").
 -include_lib("eqc/include/eqc.hrl").
 
 -record(node, {left, value, right}).
@@ -119,7 +120,5 @@ gen_tree({Cmd, Cmds, T}) ->
 
 measure_avl_trees() ->
     measure(20, 500,
-            fun({_, _, T}) -> tree_size(T) end,
-            construct([{insert,0}]),
-            fun gen_tree/1,
-            time1(fun({X, _Xs, T}) -> eval_cmd(X, T) end)).
+            #family{initial = construct([{insert,0}]), grow = fun gen_tree/1},
+            #axes{size = fun({_, _, T}) -> tree_size(T) end, time = time1(fun({X, _Xs, T}) -> eval_cmd(X, T) end)}).

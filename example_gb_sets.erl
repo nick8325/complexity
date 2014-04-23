@@ -1,16 +1,15 @@
 %% A gb_sets example.
 -module(example_gb_sets).
 -compile(export_all).
--import(measure, [measure/6]).
+-import(measure, [measure/4]).
 -import(timing, [time1/1]).
+-include("measure.hrl").
 -include_lib("eqc/include/eqc.hrl").
 
 measure_lookup_gbsets() ->
     measure(20, 500,
-            fun({_, T}) -> gb_sets:size(T) end,
-            {0, gb_sets:new()},
-            fun gb_sets_gen/1,
-            time1(fun({X, T}) -> gb_sets:is_element(X, T) end)).
+            #family{initial={0, gb_sets:new()}, grow=fun gb_sets_gen/1},
+            #axes{size=fun({_, T}) -> gb_sets:size(T) end, time = time1(fun({X, T}) -> gb_sets:is_element(X, T) end)}).
 
 gb_sets_gen({X, T}) ->
   ?LET(Y, resize(1000, int()),
@@ -51,7 +50,5 @@ is_insert(_) ->
 
 measure_gb_sets() ->
     measure(5, 100,
-            fun({_, Xs, _}) -> length(Xs) end,
-            construct([{insert,0}]),
-            fun gen_tree/1,
-            time1(fun({X, Xs, _T}) -> construct([X|Xs]) end)).
+            #family{initial=construct([{insert,0}]), grow=fun gen_tree/1},
+            #axes{size=fun({_, Xs, _}) -> length(Xs) end, time=time1(fun({X, Xs, _T}) -> construct([X|Xs]) end)}).

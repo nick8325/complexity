@@ -11,9 +11,9 @@ collate([X,Y|Xs], N) -> [{X, N}|collate([Y|Xs], 1)].
 
 graph(File, Points) ->
     file:write_file(File,
-      [ io_lib:format("~p ~p ~p~n", [X, Y, K]) || {{X, Y}, K} <- Points ]).
+      [ io_lib:format("~p ~p ~p~n", [X, Y, 1]) || {X, Y} <- Points ]).
 
 fit(Worst, Best) ->
-    graph("worst", collate(Worst)),
-    graph("best", collate(Best)),
+    graph("worst", Worst),
+    graph("best", Best),
     io:put_chars(os:cmd("./Fit && gnuplot -persist gnuplot")).

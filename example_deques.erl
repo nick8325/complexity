@@ -2,8 +2,9 @@
 %% (unlike examples_queues.erl).
 -module(example_deques).
 -compile(export_all).
--import(measure, [measure/6]).
+-import(measure, [measure/4]).
 -import(timing, [time1/1]).
+-include("measure.hrl").
 -include_lib("eqc/include/eqc.hrl").
 
 %% Argh! lists:reverse makes a constant number of reductions.
@@ -81,7 +82,5 @@ gen_cmds(Cmds) ->
 
 measure_deque() ->
     measure(1, 50,
-            fun length/1,
-            [],
-            fun gen_cmds/1,
-            time1(fun cmds/1)).
+            #family{initial = [], grow = fun gen_cmds/1},
+            #axes{size = fun length/1, time = time1(fun cmds/1)}).
