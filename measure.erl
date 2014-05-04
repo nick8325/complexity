@@ -11,7 +11,7 @@ measure(Rounds, MaxSize, Family, Axes) ->
     || I <- lists:seq(1, Rounds) ],
   io:format("Fitting data.~n~n"),
   Results1 =
-    [{-N, X} || #point{coords=[N,X|_]} <- lists:concat(Results) ],
+    [{N, X} || #point{coords=[N,X|_]} <- lists:concat(Results) ],
   fit:fit(Results1, Results1).
 
 round(I, MaxSize, Family, Axes) ->
@@ -27,12 +27,15 @@ run(#frontier{inert = Inert, ert = [Cand|Ert]}, MaxSize, Family=#family{grow = G
   Frontier1 = #frontier{inert = [Cand|Inert], ert = Ert},
   Z = eqc_gen:pick(Grow(Cand#point.value)),
   Cands = [ point(Value, Axes) || Value <- Z ],
-  Cands1 = [ C || C=#point{coords=[Size|_]} <- Cands, -Size =< MaxSize ],
+  Cands1 = [ C || C=#point{coords=[Size|_]} <- Cands, Size =< MaxSize ],
   io:format("."),
   run(add_cands_to_frontier(Cands1, Frontier1), MaxSize, Family, Axes).
 
 point(Value, Axes) ->
-  Funs = [negate(Axes#axes.size), Axes#axes.time|Axes#axes.measurements],
+  %% OBS we use both size and -size to the measurements,
+  %% so that a test case only dominates test cases with the same size,
+  %% and we get one test case for each size
+  Funs = [Axes#axes.size, Axes#axes.time, negate(Axes#axes.size)|Axes#axes.measurements],
   #point{value = Value, coords = [ F(Value) || F <- Funs ]}.
 
 negate(F) -> fun(X) -> -F(X) end.
