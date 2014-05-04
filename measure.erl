@@ -42,7 +42,7 @@ run(#frontier{inert = Inert, ert = [Cand|Ert]}, MaxSize, Family=#family{grow = G
   run(add_cands_to_frontier(Cands1, Frontier1), MaxSize, Family, Axes).
 
 point(Value, Axes) ->
-  %% OBS we use both size and -size to the measurements,
+  %% OBS we use both size and -size as measurements,
   %% so that a test case only dominates test cases with the same size,
   %% and we get one test case for each size
   Funs = [Axes#axes.size, Axes#axes.time, negate(Axes#axes.size)|Axes#axes.measurements],
