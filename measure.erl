@@ -18,8 +18,18 @@ round(I, MaxSize, Family, Axes) ->
   io:format("~p.", [I]),
   Frontier = #frontier{inert = [], ert = [point(Family#family.initial, Axes)]},
   Result = run(Frontier, MaxSize, Family, Axes),
-  io:format("~n"),
+  Worst = worst_case(Result),
+  io:format("~n~p~n~n", [Worst]),
   Result.
+
+worst_case(Xs) ->
+  MaxSize = having_maximum(fun(#point{coords=[Size|_]}) -> Size end, Xs),
+  [#point{value=Value}|_] = having_maximum(fun(#point{coords=[_,Time|_]}) -> Time end, MaxSize),
+  Value.
+
+having_maximum(F, Xs) ->
+  Maximum = lists:max(lists:map(F, Xs)),
+  [ X || X <- Xs, F(X) == Maximum ].
 
 run(#frontier{inert = Inert, ert = []}, _, _, _) ->
   Inert;
