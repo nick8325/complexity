@@ -69,10 +69,9 @@ merge(Xs, [Y|Ys]) ->
 
 %% An incremental list generator.
 list_gen(Xs) ->
-    ?LET(X, resize(100, int()),
-    ?LET(Y, elements(non_empty(X,Xs)),
-      return(insert_anywhere(X, Xs) ++
-             insert_anywhere(Y, Xs)))).
+    ?LET(Ys, vector(5, resize(100, int())),
+    ?LET(Zs, vector(5, elements(non_empty(0,Xs))),
+      return(insert_anywhere(Ys ++ Zs, Xs)))).
 
 non_empty(X, []) ->
     [X];
@@ -83,11 +82,11 @@ splits(Xs) ->
     [ lists:split(N, Xs)
     || N <- lists:seq(0, length(Xs)) ].
 
-insert_anywhere(X, Xs) ->
-    [ Ys ++ [X] ++ Zs || {Ys, Zs} <- splits(Xs) ].
+insert_anywhere(Xs, Ys) ->
+    [ As ++ [X] ++ Bs || X <- Xs, {As, Bs} <- splits(Ys) ].
 
 measure_sorting_algorithm(Sort) ->
-  measure(20, 50,
+  measure(10, 50,
           #family{initial = [], grow = fun list_gen/1},
           #axes{size = fun length/1,
                 time = time1(Sort)}).
