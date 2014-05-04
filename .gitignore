@@ -8,6 +8,5 @@ current_counterexample.eqc
 *.png
 gnuplot
 \#*
-best
-worst
+data
 examples.erl
