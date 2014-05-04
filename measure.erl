@@ -7,20 +7,33 @@
 measure(Rounds, MaxSize, Family, Axes) ->
   eqc_gen:pick(true),
   Results =
-    [ round(I, MaxSize, Family, Axes)
-    || I <- lists:seq(1, Rounds) ],
+    [ round(I*2 + case Kind of worst -> -1; best -> 0 end, Kind, MaxSize, Family, Axes)
+    || I <- lists:seq(1, Rounds),
+       Kind <- [worst, best]],
   io:format("Fitting data.~n~n"),
-  Results1 =
-    [{N, X} || #point{coords=[N,X|_]} <- lists:concat(Results) ],
-  fit:fit(Results1, Results1).
+  fit:fit(lists:concat(Results)).
 
-round(I, MaxSize, Family, Axes) ->
-  io:format("~p.", [I]),
-  Frontier = #frontier{inert = [], ert = [point(Family#family.initial, Axes)]},
-  Result = run(Frontier, MaxSize, Family, Axes),
+round(I, Kind, MaxSize, Family, Axes) ->
+  io:format("~p. ~s case.", [I, kind_name(Kind)]),
+  Axes1 = kind_axes(Axes, Kind),
+  Frontier = #frontier{inert = [], ert = [point(Family#family.initial, Axes1)]},
+  Result = run(Frontier, MaxSize, Family, Axes1),
   Worst = worst_case(Result),
   io:format("~n~p~n~n", [Worst]),
-  Result.
+  [ kind_point(X, Kind) || X <- Result ].
+
+kind_name(worst) -> "Worst";
+kind_name(best) -> "Best".
+kind_axes(Axes, worst) -> Axes;
+kind_axes(Axes, best) ->
+  #axes {
+     size = Axes#axes.size,
+     time = negate(Axes#axes.time),
+     measurements = lists:map(fun negate/1, Axes#axes.measurements)
+    }.
+kind_point(Point, worst) -> Point;
+kind_point(Point=#point{coords = [Size|Coords]}, best) ->
+  Point#point{coords = [Size|[-Coord || Coord <- Coords]]}.
 
 worst_case(Xs) ->
   MaxSize = having_maximum(fun(#point{coords=[Size|_]}) -> Size end, Xs),

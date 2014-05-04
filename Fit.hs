@@ -5,13 +5,13 @@ import Data.List
 import Data.Function
 import Data.Ord
 
-parse :: String -> [(Double, Double, Int)]
-parse = map (triple . map read . words) . lines
+parse :: String -> [(Double, Double)]
+parse = map (pair . map read . words) . lines
   where
-    triple [x,y,z] = (x,y,truncate z)
+    pair [x,y] = (x,y)
 
 constraints f points =
-  Dense [ f x y | (x, y, _) <- points ]
+  Dense [ f x y | (x, y) <- points ]
 
 fitAbove trans points =
   simplex (Minimize (opt trans points))
@@ -22,20 +22,10 @@ fitBelow trans points =
           (constraints (\x y -> [x, 1] :<=: y) (rename (xt trans) points))
           [Free 2]
 
-maxX points = maximum (map fst3 points)
-fst3 (x,_,_) = x
-snd3 (_,y,_) = y
-thd3 (_,_,z) = z
+maxX points = maximum (map fst points)
 preprocess maximum points =
-  [ (x, maximum (map snd3 ps), sum (map thd3 ps))
-  | ps@((x,_,_):_) <- groupBy ((==) `on` fst3) (sortBy (comparing fst3) points) ]
-withoutOutliers ps =
-  drop n (take (length ps - n) ps)
-  where
-    n = length ps `div` 10
-expand = concatMap expand1
-  where
-    expand1 (x, y, n) = replicate n (x, y, 1)
+  [ (x, maximum (map snd ps))
+  | ps@((x,_):_) <- groupBy ((==) `on` fst) (sortBy (comparing fst) points) ]
 
 --   int(at+b)
 -- = a int(t) + bx
@@ -105,7 +95,7 @@ nlognT = Transformation 3 "n log n" "n*log(n)" (\x -> x * log (x+1))
          (\x -> (x**2 - 1) * log (x+1) / 2 - (x-2)*x / 4)
 n2T = Transformation 4 "n^2" "n**2" (^2) (\x -> x^3 / 3)
 
-rename f ps = [(f x, y, k) | (x, y, k) <- ps]
+rename f ps = [(f x, y) | (x, y) <- ps]
 
 findArea trans sol maxX =
   case findSol sol of
@@ -136,9 +126,8 @@ fit trans (worst, best) =
     points = worst ++ best
 
 main = do
-  worst <- fmap parse (readFile "worst")
-  best <- fmap parse (readFile "best")
-  let points = (worst, best)
+  input <- fmap parse (readFile "data")
+  let points = (input, input)
       lin = fit idT points
       logg = fit logT points
       nlogn = fit nlognT points
@@ -162,7 +151,7 @@ main = do
 
   writeFile "gnuplot" . unlines $ [
     "set dummy n",
-    "plot 'worst', 'best'" ++ concat
+    "plot 'worst'" ++ concat
       [ ", " ++ formula x ++ " linewidth 2"
       | x <- [above theBest, below theBest] ]
     ]
