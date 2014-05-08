@@ -5,11 +5,6 @@
 -include("measure.hrl").
 
 %% A variety of sorting algorithms.
-insertion_sort([]) ->
-    [];
-insertion_sort([X|Xs]) ->
-    ordsets:add_element(X, insertion_sort(Xs)).
-
 naive_qsort([]) ->
     [];
 naive_qsort([X|Xs]) ->
@@ -39,6 +34,29 @@ pivot(Xs) ->
                   lists:nth(Len, Xs)]),
     Pivot.
 
+%% An incremental list generator.
+list_gen(Xs) ->
+    ?LET(Ys, vector(5, resize(100, int())),
+    ?LET(Zs, vector(5, elements(non_empty(0, Xs))),
+      return(insert_anywhere(Ys ++ Zs, Xs)))).
+
+non_empty(X, []) ->
+    [X];
+non_empty(_X, Xs) ->
+    Xs.
+
+splits(Xs) ->
+    [ lists:split(N, Xs)
+    || N <- lists:seq(0, length(Xs)) ].
+
+insert_anywhere(Xs, Ys) ->
+    [ As ++ [X] ++ Bs || X <- Xs, {As, Bs} <- splits(Ys) ].
+
+insertion_sort([]) ->
+    [];
+insertion_sort([X|Xs]) ->
+    ordsets:add_element(X, insertion_sort(Xs)).
+
 merge_sort([]) ->
     [];
 merge_sort(Xs=[_]) ->
@@ -64,24 +82,6 @@ merge([X|Xs], Ys=[Y|_]) when X =< Y ->
     [X|merge(Xs, Ys)];
 merge(Xs, [Y|Ys]) ->
     [Y|merge(Xs, Ys)].
-
-%% An incremental list generator.
-list_gen(Xs) ->
-    ?LET(Ys, vector(5, resize(100, int())),
-    ?LET(Zs, vector(5, elements(non_empty(0,Xs))),
-      return(insert_anywhere(Ys ++ Zs, Xs)))).
-
-non_empty(X, []) ->
-    [X];
-non_empty(_X, Xs) ->
-    Xs.
-
-splits(Xs) ->
-    [ lists:split(N, Xs)
-    || N <- lists:seq(0, length(Xs)) ].
-
-insert_anywhere(Xs, Ys) ->
-    [ As ++ [X] ++ Bs || X <- Xs, {As, Bs} <- splits(Ys) ].
 
 measure_sorting_algorithm(Sort) ->
   measure(10, 50,

@@ -37,6 +37,8 @@ empty({[], []}) ->
     true;
 empty(_) ->
     false.
+new() ->
+    {[], []}.
 
 %% Generate and interpret "commands".
 cmd({out,1}, Q) ->
