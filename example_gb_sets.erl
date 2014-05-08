@@ -1,8 +1,6 @@
 %% A gb_sets example.
 -module(example_gb_sets).
 -compile(export_all).
--import(measure, [measure/4]).
--import(timing, [time1/1]).
 -include("measure.hrl").
 -include_lib("eqc/include/eqc.hrl").
 

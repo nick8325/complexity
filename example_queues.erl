@@ -2,8 +2,6 @@
 %% Alternating removing from both ends causes bad time complexity.
 -module(example_queues).
 -compile(export_all).
--import(measure, [measure/4]).
--import(timing, [time1/1]).
 -include("measure.hrl").
 -include_lib("eqc/include/eqc.hrl").
 

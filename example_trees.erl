@@ -1,8 +1,6 @@
 %% Unbalanced binary search trees.
 -module(example_trees).
 -compile(export_all).
--import(measure, [measure/4]).
--import(timing, [time1/1]).
 -include("measure.hrl").
 -include_lib("eqc/include/eqc.hrl").
 

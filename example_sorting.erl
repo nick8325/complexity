@@ -1,8 +1,6 @@
 % Sorting examples.
 -module(example_sorting).
 -compile(export_all).
--import(measure, [measure/4]).
--import(timing, [time1/1]).
 -include_lib("eqc/include/eqc.hrl").
 -include("measure.hrl").
 
