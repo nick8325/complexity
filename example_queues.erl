@@ -68,10 +68,7 @@ valid_cmds(N, [{in,_}|Cmds]) ->
 
 gen_cmds(Cmds) ->
     Candidates =
-      example_sorting:insert_anywhere({out,1}, Cmds) ++
-      example_sorting:insert_anywhere({out,2}, Cmds) ++
-      example_sorting:insert_anywhere({in,1}, Cmds) ++
-      example_sorting:insert_anywhere({in,2}, Cmds),
+      example_sorting:insert_anywhere([{out,1}, {out,2}, {in,1}, {in,2}], Cmds),
     lists:filter(fun valid_cmds/1, Candidates).
 
 measure_queue() ->
