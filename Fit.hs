@@ -15,7 +15,7 @@ constraints f points =
 
 fitAbove trans points =
   simplex (Minimize (opt trans points))
-          (constraints (\x y -> [x, 1] :=>: y) (rename (xt trans) points))
+          (constraints (\x y -> [x, 1] :>=: y) (rename (xt trans) points))
           [Free 2]
 fitBelow trans points =
   simplex (Maximize (opt trans points))
