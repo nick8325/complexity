@@ -1,0 +1,42 @@
+Building
+--------
+
+You need to have the following installed:
+  * Erlang QuickCheck
+  * The Haskell platform
+  * GLPK, the GNU Linear Programming Kit
+
+Plus optionally:
+  * gnuplot
+
+After that, first install the Haskell bindings to GLPK with:
+  cabal update
+  cabal install hmatrix-glpk
+
+Then build the tool with make.
+
+Running examples
+----------------
+
+There are several examples in examples.erl. Pick one of them and run it:
+
+  > examples:median_of_three_qsort().
+
+This example tests an implementation of quicksort.
+
+You will see the tool generate some test cases and then after a while
+print out its guess at the function's complexity:
+
+  Worst-case complexity: O(n^2)
+  Best-case complexity: O(n)
+
+Don't take this output as gospel: the tool also produces a graph for
+you to look at. Open the file plot.pdf and you will see a plot of the
+tests the tool ran. The red crosses are test cases. The x-axis shows
+the size of each test case and the y-axis shows the number of BEAM
+reductions evaluating that test case.  The tool has also fitted two
+curves which envelope the data; you can see the curves and their
+formulas. The upper curve has y proportional to x^2 and fits tightly
+above the 
+
+FIXME finish README
