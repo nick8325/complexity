@@ -1,0 +1,1 @@
+-record(queue, {front, back}).
