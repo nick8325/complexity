@@ -39,15 +39,16 @@ eval_cmd({remove, X}, Set) ->
   Set.
 
 eval_cmds([]) ->
-  java:new(get_java_node(), 'java.util.HashSet', []);
+  java:new(get_java_node(), 'MyClass', []);
 eval_cmds([ Cmd | Cmds ]) ->
   eval_cmd(Cmd, eval_cmds(Cmds)). 
 
 
 %% Command sequence generators.
 cmds(Model) ->
-  [ {add, resize(100, int())} || length(Model) < 5 ] ++
-  [ {remove, elements(Model)} || length(Model) > 0 ].
+  [ {add, resize(100, int())} ] ++
+  [ {remove, elements([0] ++ Model)} ].
+  %[ {remove, elements(Model)} || length(Model) > 0 ].
 
 command_sequence(Cmds) ->
   Model = eval_cmds_model(Cmds),
@@ -64,10 +65,13 @@ measure_size(Cmds) ->
 %  length(eval_cmds_model(Cmds)).
 
 measure_time(Cmds) ->
-  apply(time1(fun eval_cmds/1), [Cmds]).
+%  apply(time1(fun eval_cmds/1), [Cmds]).
+  {Time, _} = timer:tc(?MODULE, eval_cmds, [Cmds]),
+  Time.
 
 start_java_node() ->
-  {ok, Node} = java:start_node([{java_verbose, "WARNING"}]),
+  {ok, Node} = java:start_node([{java_verbose, "WARNING"},
+                                {add_to_java_classpath,["."]}]),
   set_java_node(Node).
 
 warm_up_java() ->
@@ -77,7 +81,7 @@ warm_up_java() ->
 measure() ->
   start_java_node(),
   warm_up_java(),
-  measure(1, 30,
+  measure(3, 100,
           #family{initial = [], grow = fun measure_grow/1},
           #axes{size = fun measure_size/1, time = fun measure_time/1}).  
 
@@ -88,6 +92,13 @@ print_object(Object) ->
   Class = java:find_class(Object),
   io:format(">>> Class: ~p~n", [Class]),
   io:format("===========================~n").
+
+
+test_MyClass() ->
+  {ok, Node} = java:start_node([{java_verbose, "WARNING"},
+                                {add_to_java_classpath,["."]}]),
+  MyClass = java:new(Node, 'MyClass', []),
+  print_object(MyClass).
 
 
 test() ->
