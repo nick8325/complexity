@@ -1,18 +1,33 @@
 
+import java.util.*;
+
+
 public class MyClass
 {
+  private ArrayList m_list;
+
+
   public MyClass()
   {
-    System.out.println("!!! MyClass()");
+    m_list = new ArrayList();
   }
 
-  public void Add(int x)
+  public void add(int x)
   {
-    System.out.println("!!! Add(" + x + ")");
+    m_list.add(x);
   }
 
-  public void Remove(int x)
+  public boolean remove(int x) throws InterruptedException
   {
-    System.out.println("!!! Remove(" + x + ")");
+    for(int i = 0; i < m_list.size(); i++)
+    {
+      if(m_list.get(i) == x)
+      {
+        m_list.remove(i);
+        return true;
+      }
+    }
+
+    return false;
   }
 }

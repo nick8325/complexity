@@ -16,6 +16,11 @@ get_java_node() ->
 set_java_node(Node) ->
   put(java_node, Node).
 
+get_test_obj() ->
+  get(test_obj).
+
+set_test_obj(Obj) ->
+  put(test_obj, Obj).
 
 
 %% Evaluates commands in the model space.
@@ -38,22 +43,31 @@ eval_cmd({remove, X}, Set) ->
   java:call(Set, remove, [X]),
   Set.
 
-eval_cmds([]) ->
-  java:new(get_java_node(), 'MyClass', []);
-eval_cmds([ Cmd | Cmds ]) ->
-  eval_cmd(Cmd, eval_cmds(Cmds)). 
+%eval_cmds([]) ->
+%  java:new(get_java_node(), 'MyClass', []);
+%eval_cmds([ Cmd | Cmds ]) ->
+%  eval_cmd(Cmd, eval_cmds(Cmds)). 
+eval_cmds(Cmds) ->
+  TestObj = java:new(get_java_node(), 'MyTest', []),
+  set_test_obj(TestObj),
+  Commands = [ atom_to_list(X) || {X, _} <- Cmds ],
+  Args = [ X || {_, X} <- Cmds ],
+  java:call(get_test_obj(), run, [3, Commands, Args]).
+  
 
 
 %% Command sequence generators.
 cmds(Model) ->
   [ {add, resize(100, int())} ] ++
-  [ {remove, elements([0] ++ Model)} ].
-  %[ {remove, elements(Model)} || length(Model) > 0 ].
+  [ {remove, 0} ] ++
+  [ {remove, elements(Model)} || length(Model) > 0 ].
 
 command_sequence(Cmds) ->
   Model = eval_cmds_model(Cmds),
   ?LET(NewCmds, cmds(Model),
-    return(example_sorting:insert_anywhere(NewCmds, Cmds))).
+     return([ [NewCmd | Cmds] || NewCmd <- NewCmds ] ++
+            [ Cmds ++ [NewCmd] || NewCmd <- NewCmds ] )).
+%    return(example_sorting:insert_anywhere(NewCmds, Cmds))).
 
 
 %% Measure functions.
@@ -64,10 +78,13 @@ measure_size(Cmds) ->
   length(Cmds).
 %  length(eval_cmds_model(Cmds)).
 
+
+
 measure_time(Cmds) ->
-%  apply(time1(fun eval_cmds/1), [Cmds]).
-  {Time, _} = timer:tc(?MODULE, eval_cmds, [Cmds]),
-  Time.
+%%  apply(time1(fun eval_cmds/1), [Cmds]).
+%  Times = [ begin {Time, _} = timer:tc(?MODULE, eval_cmds, [Cmds]), Time end || _ <- lists:seq(1, 5) ], 
+%  lists:min(Times).
+  eval_cmds(Cmds).
 
 start_java_node() ->
   {ok, Node} = java:start_node([{java_verbose, "WARNING"},
@@ -81,7 +98,7 @@ warm_up_java() ->
 measure() ->
   start_java_node(),
   warm_up_java(),
-  measure(3, 100,
+  measure(1, 200,
           #family{initial = [], grow = fun measure_grow/1},
           #axes{size = fun measure_size/1, time = fun measure_time/1}).  
 
@@ -120,4 +137,9 @@ test() ->
     java:print_stacktrace(E)
   end.
 
+test2() ->
+  start_java_node(),
+  Test = java:new(get_java_node(), 'MyTest', []),
+  java:call(Test, run, [100, ["add", "remove"], [0, 1]]).
+%  java:call(Test, run, [[{"a", "a_arg"}, {"b", "b_arg"}, {"c", "c_arg"}]]).
 

@@ -1,4 +1,4 @@
 #!/bin/bash
 
-erl -sname java_test -pa ..
+PATH=.:$PATH erl -sname java_test -pa ..
 
