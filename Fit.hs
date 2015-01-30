@@ -14,11 +14,11 @@ constraints f points =
   Dense [ f x y | (x, y) <- points ]
 
 fitAbove trans points =
-  simplex (Minimize (opt trans points))
+  simplex (Minimize (opt trans (maxX points)))
           (constraints (\x y -> [x, 1] :>=: y) (rename (xt trans) points))
           [Free 2]
 fitBelow trans points =
-  simplex (Maximize (opt trans points))
+  simplex (Maximize (opt trans (maxX points)))
           (constraints (\x y -> [x, 1] :<=: y) (rename (xt trans) points))
           [Free 2]
 
@@ -32,8 +32,21 @@ preprocess maximum points =
 -- hence total area is:
 --   a int(x) + bx - a int(0)
 -- = a(int(x) - int(0)) + bx
-opt trans points = [integral trans (maxX points) - integral trans 0, maxX points]
-area (Known trans maxX a b _) = a * (integral trans maxX - integral trans 0) + b * maxX
+
+-- Tweak:
+-- We would like the curve to fit more tightly on the right-hand side of
+-- the graph, as this is what tells us the growth rate of the function.
+-- I tried minimising the integral from X/2 to X, instead of from 0 to X,
+-- but this overfits in some cases - we want the curve to at least somewhat
+-- fit the left-hand side of the graph too. Instead I take the integral from
+-- 0 to X, and the integral from X/2 to X, and add them.
+opt trans maxX =
+  zipWith (+)
+    [integral trans maxX - integral trans 0, maxX]
+    [integral trans maxX - integral trans (maxX/2), maxX/2]
+area (Known trans maxX a b _) = a * x + b * y
+  where
+    [x, y] = opt trans maxX
 
 data Transformation = Transformation {
   level_ :: Int,
