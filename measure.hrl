@@ -1,5 +1,5 @@
 -record(point, {coords, value}).
--record(axes, {size, time, measurements = []}).
+-record(axes, {size, time, measurements = [], repeat = 0}).
 -record(family, {initial, grow}).
 -record(frontier, {inert, ert}).
 -import(measure, [measure/4]).

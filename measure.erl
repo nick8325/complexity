@@ -51,7 +51,7 @@ run(#frontier{inert = Inert, ert = [Cand|Ert]}, MaxSize, Family=#family{grow = G
   Z = eqc_gen:pick(Grow(Cand#point.value)),
   Cands = [ point(Value, Axes) || Value <- lists:usort(Z) ],
   Cands1 = [ C || C=#point{coords=[Size|_]} <- Cands, Size =< MaxSize ],
-  run(add_cands_to_frontier(Cands1, Frontier1), MaxSize, Family, Axes).
+  run(add_cands_to_frontier(Cands1, Frontier1, Axes), MaxSize, Family, Axes).
 
 point(Value, Axes) ->
   %% OBS we use both size and -size as measurements,
@@ -62,21 +62,30 @@ point(Value, Axes) ->
 
 negate(F) -> fun(X) -> -F(X) end.
 
-add_cands_to_frontier(Cands, Frontier) ->
+add_cands_to_frontier(Cands, Frontier, Axes) ->
   #frontier{inert = Inert, ert = Ert} =
-    lists:foldl(fun add_to_frontier/2, Frontier, Cands),
+    lists:foldl(fun(C, F) -> add_to_frontier(C, F, Axes) end, Frontier, Cands),
   #frontier{inert = Inert, ert = lists:usort(Ert)}.
 
-add_to_frontier(Cand, Frontier=#frontier{inert=Inert, ert=Ert}) ->
+improve(Cand, Axes) ->
+  Cands = [ point(Cand#point.value, Axes) || _ <- lists:seq(1, Axes#axes.repeat) ],
+  lists:min([Cand|Cands]).
+
+add_to_frontier(Cand, Frontier=#frontier{inert=Inert, ert=Ert}, Axes) ->
   case [ X || X <- Inert ++ Ert, dominates(X, Cand) ] of
     [_|_] -> Frontier;
     [] ->
-      Inert1 = [ X || X <- Inert, not dominates(Cand, X) ],
-      Ert1 = [ X || X <- Ert, not dominates(Cand, X) ],
-      %io:format("."),
-      {Coords1, [_|Coords2]} = lists:split(2, Cand#point.coords),
-      io:format("~p ", [Coords1 ++ Coords2]),
-      #frontier{inert=Inert1, ert=[Cand|Ert1]}
+      Cand1 = improve(Cand, Axes),
+      case [ X || X <- Inert ++ Ert, dominates(X, Cand1) ] of
+        [_|_] -> Frontier;
+        [] ->
+          Inert1 = [ X || X <- Inert, not dominates(Cand1, X) ],
+          Ert1 = [ X || X <- Ert, not dominates(Cand1, X) ],
+          %io:format("."),
+          {Coords1, [_|Coords2]} = lists:split(2, Cand1#point.coords),
+          io:format("~p ", [Coords1 ++ Coords2]),
+          #frontier{inert=Inert1, ert=[Cand1|Ert1]}
+      end
   end.
 
 dominates(X, Y) ->
