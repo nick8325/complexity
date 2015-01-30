@@ -9,7 +9,7 @@ public class MyClass
 
   public MyClass()
   {
-    m_list = new ArrayList();
+    m_list = new ArrayList(1000);
   }
 
   public void add(int x)
@@ -23,7 +23,7 @@ public class MyClass
     {
       if(m_list.get(i) == x)
       {
-        m_list.remove(i);
+        //m_list.remove(i);
         return true;
       }
     }

@@ -48,11 +48,16 @@ eval_cmd({remove, X}, Set) ->
 %eval_cmds([ Cmd | Cmds ]) ->
 %  eval_cmd(Cmd, eval_cmds(Cmds)). 
 eval_cmds(Cmds) ->
-  TestObj = java:new(get_java_node(), 'MyTest', []),
+  {ok, Node} = java:start_node([{java_verbose, "WARNING"},
+                                {add_to_java_classpath,["."]}]),
+  TestObj = java:new(Node, 'MyTest', []),
+  %TestObj = java:new(get_java_node(), 'MyTest', []),
   set_test_obj(TestObj),
   Commands = [ atom_to_list(X) || {X, _} <- Cmds ],
   Args = [ X || {_, X} <- Cmds ],
-  java:call(get_test_obj(), run, [3, Commands, Args]).
+  Result = java:call(get_test_obj(), run, [10, Commands, Args]),
+  java:terminate(Node),
+  Result.
   
 
 
@@ -86,6 +91,10 @@ measure_time(Cmds) ->
 %  lists:min(Times).
   eval_cmds(Cmds).
 
+measure_measure(Cmds) ->
+  Model = eval_cmds_model(Cmds),
+  length(Model).   
+
 start_java_node() ->
   {ok, Node} = java:start_node([{java_verbose, "WARNING"},
                                 {add_to_java_classpath,["."]}]),
@@ -98,9 +107,11 @@ warm_up_java() ->
 measure() ->
   start_java_node(),
   warm_up_java(),
-  measure(1, 200,
+  measure(1, 20,
           #family{initial = [], grow = fun measure_grow/1},
-          #axes{size = fun measure_size/1, time = fun measure_time/1}).  
+          #axes{size = fun measure_size/1,
+                time = fun measure_time/1,
+                measurements = [ fun measure_measure/1 ]}).  
 
 
 print_object(Object) ->
