@@ -64,7 +64,9 @@ point(Value, Axes) ->
 negate(F) -> fun(X) -> -F(X) end.
 
 add_cands_to_frontier(Cands, Frontier) ->
-  lists:foldl(fun add_to_frontier/2, Frontier, Cands).
+  #frontier{inert = Inert, ert = Ert} =
+    lists:foldl(fun add_to_frontier/2, Frontier, Cands),
+  #frontier{inert = Inert, ert = lists:usort(Ert)}.
 
 add_to_frontier(Cand, Frontier=#frontier{inert=Inert, ert=Ert}) ->
   case [ X || X <- Inert ++ Ert, dominates(X, Cand) ] of
