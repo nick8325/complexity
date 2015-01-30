@@ -49,7 +49,7 @@ run(#frontier{inert = Inert, ert = []}, _, _, _) ->
 run(#frontier{inert = Inert, ert = [Cand|Ert]}, MaxSize, Family=#family{grow = Grow}, Axes) ->
   Frontier1 = #frontier{inert = [Cand|Inert], ert = Ert},
   Z = eqc_gen:pick(Grow(Cand#point.value)),
-  Cands = [ point(Value, Axes) || Value <- Z ],
+  Cands = [ point(Value, Axes) || Value <- lists:usort(Z) ],
   Cands1 = [ C || C=#point{coords=[Size|_]} <- Cands, Size =< MaxSize ],
   io:format("."),
   run(add_cands_to_frontier(Cands1, Frontier1), MaxSize, Family, Axes).
