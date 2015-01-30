@@ -56,7 +56,7 @@ eval_cmds(Cmds) ->
   RCmds = lists:reverse(Cmds),
   Commands = [ atom_to_list(X) || {X, _} <- RCmds ],
   Args = [ X || {_, X} <- RCmds ],
-  Result = java:call(get_test_obj(), run, [3, 50, Commands, Args]),
+  Result = java:call(get_test_obj(), run, [1, 50, Commands, Args]),
   %java:terminate(Node),
   Result.
   
@@ -71,6 +71,7 @@ cmds(Model) ->
 command_sequence(Cmds) ->
   Model = eval_cmds_model(Cmds),
   ?LET(NewCmds, cmds(Model),
+%      return([ [NewCmd | Cmds] || NewCmd <- NewCmds ])).
      return([ [NewCmd | Cmds] || NewCmd <- NewCmds ] ++
             [ Cmds ++ [NewCmd] || NewCmd <- NewCmds ] )).
 %    return(example_sorting:insert_anywhere(NewCmds, Cmds))).
@@ -108,12 +109,12 @@ warm_up_java() ->
 measure() ->
   start_java_node(),
   warm_up_java(),
-  measure(1, 50,
+  measure(1, 100,
           #family{initial = [], grow = fun measure_grow/1},
           #axes{size = fun measure_size/1,
                 time = fun measure_time/1,
-                measurements = [ fun measure_measure/1 ],
-                repeat = 5}).
+%                measurements = [ fun measure_measure/1 ],
+                repeat = 2}).
 
 
 print_object(Object) ->

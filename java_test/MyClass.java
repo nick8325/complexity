@@ -11,7 +11,7 @@ public class MyClass
 
   public MyClass()
   {
-    m_list = new ArrayList(1000);
+    m_list = new ArrayList();
   }
 
   public void add(int x)
