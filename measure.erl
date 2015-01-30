@@ -74,7 +74,8 @@ add_to_frontier(Cand, Frontier=#frontier{inert=Inert, ert=Ert}) ->
       Inert1 = [ X || X <- Inert, not dominates(Cand, X) ],
       Ert1 = [ X || X <- Ert, not dominates(Cand, X) ],
       %io:format("."),
-      io:format("~p ", [lists:reverse(tl(lists:reverse(Cand#point.coords)))]),
+      {Coords1, [_|Coords2]} = lists:split(2, Cand#point.coords),
+      io:format("~p ", [Coords1 ++ Coords2]),
       #frontier{inert=Inert1, ert=[Cand|Ert1]}
   end.
 
