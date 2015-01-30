@@ -26,14 +26,15 @@ public class MyTest
   }  
 
 
-  public long run(int iterations, String[] commands, int[] args) throws InterruptedException
+  public long run(int iterations, int innerIterations, String[] commands, int[] args) throws InterruptedException
   {
     long minTime = -1;
     for(int i = 0; i < iterations; i++)
     {
-      clean();
+//      clean();
+//      System.gc();
       long startTime = System.nanoTime();
-      for(int k = 0; k < 100; k++)
+      for(int k = 0; k < innerIterations; k++)
       {
         MyClass myClass = new MyClass();
         for(int j = 0; j < commands.length; j++) eval_cmd(myClass, commands[j], args[j]);

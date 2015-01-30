@@ -53,9 +53,10 @@ eval_cmds(Cmds) ->
 %  TestObj = java:new(Node, 'MyTest', []),
   TestObj = java:new(get_java_node(), 'MyTest', []),
   set_test_obj(TestObj),
-  Commands = [ atom_to_list(X) || {X, _} <- Cmds ],
-  Args = [ X || {_, X} <- Cmds ],
-  Result = java:call(get_test_obj(), run, [10, Commands, Args]),
+  RCmds = lists:reverse(Cmds),
+  Commands = [ atom_to_list(X) || {X, _} <- RCmds ],
+  Args = [ X || {_, X} <- RCmds ],
+  Result = java:call(get_test_obj(), run, [3, 50, Commands, Args]),
   %java:terminate(Node),
   Result.
   
@@ -65,8 +66,7 @@ eval_cmds(Cmds) ->
 cmds(Model) ->
   [ {add, resize(100, int())} ] ++
   [ {remove, 0} ] ++
-%  [ {remove, elements(Model)} || length(Model) > 0 ].
-  [].
+  [ {remove, elements(Model)} || length(Model) > 0 ].
 
 command_sequence(Cmds) ->
   Model = eval_cmds_model(Cmds),
@@ -108,7 +108,7 @@ warm_up_java() ->
 measure() ->
   start_java_node(),
   warm_up_java(),
-  measure(1, 20,
+  measure(1, 50,
           #family{initial = [], grow = fun measure_grow/1},
           #axes{size = fun measure_size/1,
                 time = fun measure_time/1,
