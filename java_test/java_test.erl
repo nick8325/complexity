@@ -112,7 +112,8 @@ measure() ->
           #family{initial = [], grow = fun measure_grow/1},
           #axes{size = fun measure_size/1,
                 time = fun measure_time/1,
-                measurements = [ fun measure_measure/1 ]}).  
+                measurements = [ fun measure_measure/1 ],
+                repeat = 5}).
 
 
 print_object(Object) ->
