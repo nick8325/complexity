@@ -51,7 +51,6 @@ run(#frontier{inert = Inert, ert = [Cand|Ert]}, MaxSize, Family=#family{grow = G
   Z = eqc_gen:pick(Grow(Cand#point.value)),
   Cands = [ point(Value, Axes) || Value <- lists:usort(Z) ],
   Cands1 = [ C || C=#point{coords=[Size|_]} <- Cands, Size =< MaxSize ],
-  io:format("."),
   run(add_cands_to_frontier(Cands1, Frontier1), MaxSize, Family, Axes).
 
 point(Value, Axes) ->
@@ -74,6 +73,8 @@ add_to_frontier(Cand, Frontier=#frontier{inert=Inert, ert=Ert}) ->
     [] ->
       Inert1 = [ X || X <- Inert, not dominates(Cand, X) ],
       Ert1 = [ X || X <- Ert, not dominates(Cand, X) ],
+      %io:format("."),
+      io:format("~p ", [lists:reverse(tl(lists:reverse(Cand#point.coords)))]),
       #frontier{inert=Inert1, ert=[Cand|Ert1]}
   end.
 
