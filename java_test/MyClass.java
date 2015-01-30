@@ -1,5 +1,7 @@
 
 import java.util.*;
+import java.lang.*;
+import java.io.*;
 
 
 public class MyClass
@@ -23,7 +25,7 @@ public class MyClass
     {
       if(m_list.get(i) == x)
       {
-        //m_list.remove(i);
+        m_list.remove(i);
         return true;
       }
     }

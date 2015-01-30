@@ -11,7 +11,7 @@ public class MyTest
 
   private void eval_cmd(MyClass myClass, String command, int arg) throws InterruptedException
   {
-    if(command == "add") myClass.add(arg);
+    if(command.equals("add")) myClass.add(arg);
     else myClass.remove(arg);
   }
 

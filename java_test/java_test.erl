@@ -48,15 +48,15 @@ eval_cmd({remove, X}, Set) ->
 %eval_cmds([ Cmd | Cmds ]) ->
 %  eval_cmd(Cmd, eval_cmds(Cmds)). 
 eval_cmds(Cmds) ->
-  {ok, Node} = java:start_node([{java_verbose, "WARNING"},
-                                {add_to_java_classpath,["."]}]),
-  TestObj = java:new(Node, 'MyTest', []),
-  %TestObj = java:new(get_java_node(), 'MyTest', []),
+%  {ok, Node} = java:start_node([{java_verbose, "WARNING"},
+%                                {add_to_java_classpath,["."]}]),
+%  TestObj = java:new(Node, 'MyTest', []),
+  TestObj = java:new(get_java_node(), 'MyTest', []),
   set_test_obj(TestObj),
   Commands = [ atom_to_list(X) || {X, _} <- Cmds ],
   Args = [ X || {_, X} <- Cmds ],
   Result = java:call(get_test_obj(), run, [10, Commands, Args]),
-  java:terminate(Node),
+  %java:terminate(Node),
   Result.
   
 
@@ -65,7 +65,8 @@ eval_cmds(Cmds) ->
 cmds(Model) ->
   [ {add, resize(100, int())} ] ++
   [ {remove, 0} ] ++
-  [ {remove, elements(Model)} || length(Model) > 0 ].
+%  [ {remove, elements(Model)} || length(Model) > 0 ].
+  [].
 
 command_sequence(Cmds) ->
   Model = eval_cmds_model(Cmds),
