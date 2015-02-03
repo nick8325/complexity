@@ -54,12 +54,22 @@ eval_cmds(Cmds) ->
   TestObj = java:new(get_java_node(), 'MyTest', []),
   set_test_obj(TestObj),
   RCmds = lists:reverse(Cmds),
-  Commands = [ atom_to_list(X) || {X, _} <- RCmds ],
-  Args = [ X || {_, X} <- RCmds ],
-  Result = java:call(get_test_obj(), run, [1, 50, Commands, Args]),
+
+  Commands = to_commands(RCmds),
+  Result = java:call(get_test_obj(), run, [1, 50, lists:flatten(Commands)]),
   %java:terminate(Node),
   Result.
-  
+
+to_commands(Commands) ->
+  ["{",
+   "MyClass obj = new MyClass();",
+   lists:map(fun to_command/1, Commands),
+   "}"].
+
+to_command({add, X}) ->
+  io_lib:format("obj.add(~p);", [X]);
+to_command({remove, X}) ->
+  io_lib:format("obj.remove(~p);", [X]).
 
 
 %% Command sequence generators.

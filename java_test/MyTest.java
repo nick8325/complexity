@@ -1,18 +1,15 @@
 
 import java.util.*;
+import java.io.*;
+import java.nio.charset.*;
 import com.ericsson.otp.erlang.*;
+import javassist.*;
 
 
 public class MyTest
 {
   public MyTest()
   {
-  }
-
-  private void eval_cmd(MyClass myClass, String command, int arg) throws InterruptedException
-  {
-    if(command.equals("add")) myClass.add(arg);
-    else myClass.remove(arg);
   }
 
   public void clean()
@@ -23,26 +20,27 @@ public class MyTest
       System.runFinalization();
       System.gc();
     } while(Runtime.getRuntime().freeMemory() > freeMemory);
-  }  
+  }
 
-
-  public long run(int iterations, int innerIterations, String[] commands, int[] args) throws InterruptedException
+  static int n = 0;
+  public long run(int iterations, int innerIterations, String command) throws Exception
   {
+    CtClass cc = ClassPool.getDefault().getAndRename("TestCase", "ConcreteTestCase" + n);
+    n++;
+    cc.getDeclaredMethod("run").setBody(command);
+    Command c = (Command) cc.toClass().newInstance();
     long minTime = -1;
     for(int i = 0; i < iterations; i++)
     {
 //      clean();
 //      System.gc();
       long startTime = System.nanoTime();
-      for(int k = 0; k < innerIterations; k++)
-      {
-        MyClass myClass = new MyClass();
-        for(int j = 0; j < commands.length; j++) eval_cmd(myClass, commands[j], args[j]);
-      }
+      for(int k = 0; k < innerIterations; k++) c.run();
       long stopTime = System.nanoTime();
       long elapsedTime = stopTime - startTime;
       if(minTime == -1 || elapsedTime < minTime) minTime = elapsedTime;
     }
+    cc.detach();
     return minTime;
   }
 }
