@@ -16,11 +16,10 @@ get_java_node() ->
 set_java_node(Node) ->
   put(java_node, Node).
 
-get_test_obj() ->
-  get(test_obj).
-
-set_test_obj(Obj) ->
-  put(test_obj, Obj).
+start_java_node() ->
+  {ok, Node} = java:start_node([{java_verbose, "WARNING"},
+                                {add_to_java_classpath,["."]}]),
+  set_java_node(Node).
 
 
 %% Evaluates commands in the model space.
@@ -36,40 +35,21 @@ eval_cmds_model([ Cmd | Cmds ]) ->
 
 
 %% Evaluates commands in the Java space.
-eval_cmd({add, X}, Set) ->
-  java:call(Set, add, [X]),
-  Set;
-eval_cmd({remove, X}, Set) ->
-  java:call(Set, remove, [X]),
-  Set.
-
-%eval_cmds([]) ->
-%  java:new(get_java_node(), 'MyClass', []);
-%eval_cmds([ Cmd | Cmds ]) ->
-%  eval_cmd(Cmd, eval_cmds(Cmds)). 
 eval_cmds(Cmds) ->
-%  {ok, Node} = java:start_node([{java_verbose, "WARNING"},
-%                                {add_to_java_classpath,["."]}]),
-%  TestObj = java:new(Node, 'MyTest', []),
-  TestObj = java:new(get_java_node(), 'MyTest', []),
-  set_test_obj(TestObj),
   RCmds = lists:reverse(Cmds),
-
   Commands = to_commands(RCmds),
-  Result = java:call(get_test_obj(), run, [1, 50, lists:flatten(Commands)]),
-  %java:terminate(Node),
-  Result.
+  java:call_static(get_java_node(), 'Complexity', run, [true, 1, 50, lists:flatten(Commands)]).
+
+to_command({add, X}) ->
+  io_lib:format("obj.add(~p);", [X]);
+to_command({remove, X}) ->
+  io_lib:format("obj.remove(~p);", [X]).
 
 to_commands(Commands) ->
   ["{",
    "MyClass obj = new MyClass();",
    lists:map(fun to_command/1, Commands),
    "}"].
-
-to_command({add, X}) ->
-  io_lib:format("obj.add(~p);", [X]);
-to_command({remove, X}) ->
-  io_lib:format("obj.remove(~p);", [X]).
 
 
 %% Command sequence generators.
@@ -95,36 +75,23 @@ measure_size(Cmds) ->
   length(Cmds).
 %  length(eval_cmds_model(Cmds)).
 
-
-
 measure_time(Cmds) ->
-%%  apply(time1(fun eval_cmds/1), [Cmds]).
-%  Times = [ begin {Time, _} = timer:tc(?MODULE, eval_cmds, [Cmds]), Time end || _ <- lists:seq(1, 5) ], 
-%  lists:min(Times).
   eval_cmds(Cmds).
 
 measure_measure(Cmds) ->
   Model = eval_cmds_model(Cmds),
   length(Model).   
 
-start_java_node() ->
-  {ok, Node} = java:start_node([{java_verbose, "WARNING"},
-                                {add_to_java_classpath,["."]}]),
-  set_java_node(Node).
-
-warm_up_java() ->
-  eval_cmds([{add, 0}]),
-  ok.  
 
 measure() ->
   start_java_node(),
-  warm_up_java(),
-  measure(1, 100,
-          #family{initial = [], grow = fun measure_grow/1},
-          #axes{size = fun measure_size/1,
-                time = fun measure_time/1,
-%                measurements = [ fun measure_measure/1 ],
-                repeat = 2}).
+  Family = #family{initial = [], grow = fun measure_grow/1},
+  Axes = #axes{size = fun measure_size/1,
+               time = fun measure_time/1,
+%              measurements = [ fun measure_measure/1 ],
+               repeat = 2},
+  {Time, _} = timer:tc(measure, measure, [1, 100, Family, Axes]),
+  Time / 1000000.
 
 
 print_object(Object) ->
@@ -133,13 +100,6 @@ print_object(Object) ->
   Class = java:find_class(Object),
   io:format(">>> Class: ~p~n", [Class]),
   io:format("===========================~n").
-
-
-test_MyClass() ->
-  {ok, Node} = java:start_node([{java_verbose, "WARNING"},
-                                {add_to_java_classpath,["."]}]),
-  MyClass = java:new(Node, 'MyClass', []),
-  print_object(MyClass).
 
 
 test() ->
@@ -160,10 +120,4 @@ test() ->
     erlang:display(erlang:get_stacktrace()),
     java:print_stacktrace(E)
   end.
-
-test2() ->
-  start_java_node(),
-  Test = java:new(get_java_node(), 'MyTest', []),
-  java:call(Test, run, [100, ["add", "remove"], [0, 1]]).
-%  java:call(Test, run, [[{"a", "a_arg"}, {"b", "b_arg"}, {"c", "c_arg"}]]).
 
