@@ -8,7 +8,5 @@ all: MyClass.class example_MyClass.beam
 %.class: %.java
 	javac -classpath ../../java $<
 
-#	javac -classpath javassist.jar:. Complexity.java
-
 clean:
 	rm -f *.class *.beam data gnuplot plot.pdf
