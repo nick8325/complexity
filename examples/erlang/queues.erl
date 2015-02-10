@@ -2,8 +2,14 @@
 -include("queues.hrl").
 -compile(export_all).
 
+bump([], []) -> erlang:bump_reductions(10);
+bump(_, _) -> ok.
+
 new() ->
   #queue{front = [], back = []}.
+
+size(Q) ->
+  length(Q#queue.front) + length(Q#queue.back).
 
 in(Y, #queue{front = Xs, back = Ys}) ->
   #queue{front = Xs, back = [Y|Ys]}.
@@ -13,6 +19,7 @@ out(#queue{front = [], back = []}) ->
 out(#queue{front = [], back = Ys}) ->
   out(#queue{front = reverse(Ys), back = []});
 out(#queue{front = [X|Xs], back = Ys}) ->
+%  bump(Xs, Ys),
   {X, #queue{front = Xs, back = Ys}}.
 
 
@@ -47,6 +54,7 @@ out_r(#queue{front = [], back = []}) ->
 out_r(#queue{front = Xs, back = []}) ->
   out_r(#queue{front = [], back = reverse(Xs)});
 out_r(#queue{front = Xs, back = [Y|Ys]}) ->
+%  bump(Xs, Ys),
   {Y, #queue{front = Xs, back = Ys}}.
 
 

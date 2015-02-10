@@ -3,6 +3,8 @@ Fit
 *.hi
 *.o
 *~
+*.swp
+*.class
 current_counterexample.eqc
 *.beam
 *.png
@@ -10,3 +12,4 @@ gnuplot
 \#*
 data
 examples.erl
+plot.pdf

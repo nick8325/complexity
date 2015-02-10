@@ -3,4 +3,5 @@
 -record(family, {initial, grow}).
 -record(frontier, {inert, ert}).
 -import(measure, [measure/4]).
+-import(measure_java, [measure_java/4]).
 -import(timing, [time1/1]).

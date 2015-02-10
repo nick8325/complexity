@@ -1,8 +1,4 @@
 
-import java.util.*;
-import java.io.*;
-import java.nio.charset.*;
-import com.ericsson.otp.erlang.*;
 import javassist.*;
 
 
@@ -28,6 +24,7 @@ public class Complexity
   public static void cleanRuntime()
   {
     long freeMemory;
+
     do {
       freeMemory = Runtime.getRuntime().freeMemory();
       System.runFinalization();

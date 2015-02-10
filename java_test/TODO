@@ -1,4 +1,0 @@
- * Improve the Java -> Erlang binding code.
-   - String to command binding, for example...
- * Test some additional Java classes.
-

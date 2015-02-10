@@ -1,10 +1,10 @@
 Building
 --------
-
 You need to have the following installed:
   * Erlang QuickCheck
   * The Haskell platform
   * GLPK, the GNU Linear Programming Kit
+  * JavaErlang (https://github.com/fredlund/JavaErlang)
 
 Plus optionally:
   * gnuplot
@@ -15,11 +15,13 @@ After that, first install the Haskell bindings to GLPK with:
 
 Then build the tool with make.
 
-Running examples
-----------------
 
-There are several examples in examples.erl. Pick one of them and run it:
+Running Erlang examples
+-----------------------
+There are several examples in examples/erlang/examples.erl. Pick one of them and run it:
 
+  $ cd examples/erlang
+  $ ./erl.sh
   > examples:median_of_three_qsort().
 
 This example tests an implementation of quicksort.
@@ -39,4 +41,13 @@ curves which envelope the data; you can see the curves and their
 formulas. The upper curve has y proportional to x^2 and fits tightly
 above the 
 
-FIXME finish README
+
+Running Java examples
+---------------------
+There is an example in examples/java/example_MyClass which can be run in the following way.
+
+  $ cd examples/java
+  $ ./erl.sh
+  > example_MyClass:measure().
+
+

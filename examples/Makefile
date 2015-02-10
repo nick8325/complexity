@@ -1,5 +1,5 @@
 
-SUBDIRS = haskell src java examples
+SUBDIRS = erlang java
 CLEANSUBDIRS = $(SUBDIRS:%=clean-%)
 
 .PHONY: subdirs $(SUBDIRS) $(CLEANSUBDIRS)

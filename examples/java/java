@@ -1,0 +1,4 @@
+#!/bin/bash
+
+/usr/bin/java -Djava.compiler=NONE -Xint $*
+

@@ -1,4 +1,0 @@
-#!/bin/bash
-
-/usr/bin/java -Djava.compiler=NONE -Xint -cp javassist.jar $*
-

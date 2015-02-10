@@ -16,6 +16,9 @@ cmds(Cmds) -> cmds(Cmds, queues:new()).
 cmds([], Q) -> Q;
 cmds([Cmd|Cmds], Q) -> cmds(Cmds, cmd(Cmd, Q)).
 
+queue_size(Cmds) ->
+  queues:size(cmds(Cmds)).
+
 valid_cmds(Cmds) -> valid_cmds(0, Cmds).
 
 valid_cmds(_, []) -> true;
@@ -29,9 +32,12 @@ valid_cmds(N, [{in_r,_}|Cmds]) -> valid_cmds(N+1, Cmds).
 gen_cmds(Cmds) ->
     Candidates =
       example_sorting:insert_anywhere([out, out_r, {in,a}, {in_r,a}], Cmds),
-    lists:filter(fun valid_cmds/1, Candidates).
+%    Candidates =
+%      [ Cmds ++ [Cmd] || Cmd <- [out, out_r, {in,a}, {in_r,a}] ],
+    lists:usort(lists:filter(fun valid_cmds/1, Candidates)).
 
 measure_queues() ->
     measure(1, 50,
             #family{initial=[], grow=fun gen_cmds/1},
             #axes{size=fun length/1, time=time1(fun cmds/1)}).
+%            #axes{size=fun length/1, time=time1(fun cmds/1), measurements = [fun queue_size/1]}).
