@@ -4,6 +4,9 @@ import java.lang.*;
 import java.io.*;
 
 
+/*
+  A simple implementation of a set (that allows duplicated elements). 
+*/
 public class MyClass
 {
   private ArrayList m_list;
@@ -33,3 +36,4 @@ public class MyClass
     return false;
   }
 }
+

@@ -6,6 +6,7 @@ all: $(BEAM_FILES)
 
 %.beam: %.erl
 	erlc -I ../../include $<
+	cp $@ ../../ebin
 
 examples.erl: $(ERL_FILES)
 	echo '-module(examples).' > $@
@@ -13,4 +14,4 @@ examples.erl: $(ERL_FILES)
 	grep '^measure_.*()' $^ | sed 's/^\(.*\)\.erl:measure_\(.*\)().*$$/\2() -> \1:measure_\2()./' >> $@
 
 clean:
-	rm -f $(BEAM_FILES) examples.erl data gnuplot best worst plot.pdf
+	rm -f $(BEAM_FILES) examples.erl

@@ -32,7 +32,7 @@ public class Complexity
     } while(Runtime.getRuntime().freeMemory() > freeMemory);
   }
 
-  public static long run(boolean cleanRuntime, int iterations, int innerIterations, String command) throws Exception
+  public static long run(boolean cleanRuntime, int iterations, String command) throws Exception
   {
     // Generate a new class for the provided command.
     classCounter++;
@@ -40,21 +40,15 @@ public class Complexity
     cc.getDeclaredMethod("run").setBody(command);
     ITestRun testRun = (ITestRun)cc.toClass().newInstance();
 
-    long minTime = -1;
-    for(int i = 0; i < iterations; i++)
-    {
-      if(cleanRuntime) cleanRuntime();
+    if(cleanRuntime) cleanRuntime();
 
-      long startTime = System.nanoTime();
-      for(int k = 0; k < innerIterations; k++) testRun.run();
-      long stopTime = System.nanoTime();
+    long startTime = System.nanoTime();
+    for(int i = 0; i < iterations; i++) testRun.run();
+    long elapsedTime = System.nanoTime() - startTime;
 
-      long elapsedTime = stopTime - startTime;
-      if(minTime == -1 || elapsedTime < minTime) minTime = elapsedTime;
-    }
     cc.detach();
 
-    return minTime;
+    return elapsedTime;
   }
 }
 

@@ -20,8 +20,9 @@ Running Erlang examples
 -----------------------
 There are several examples in examples/erlang/examples.erl. Pick one of them and run it:
 
-  $ cd examples/erlang
-  $ ./erl.sh
+  $ make
+  $ cd ebin 
+  $ erl
   > examples:median_of_three_qsort().
 
 This example tests an implementation of quicksort.
@@ -44,10 +45,14 @@ above the
 
 Running Java examples
 ---------------------
-There is an example in examples/java/example_MyClass which can be run in the following way.
+There is a Java example in examples/java/example_MyClass.erl which can be run in the
+following way. Note that you need to run "./erl.sh" instead of "erl".
 
-  $ cd examples/java
+  $ make
+  $ cd ebin
   $ ./erl.sh
   > example_MyClass:measure().
 
+Instructions on how to write complexity tests for java can be found in the file
+examples/java/example_MyClass.erl.
 

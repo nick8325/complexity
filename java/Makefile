@@ -1,5 +1,6 @@
 
 all: Complexity.class
+	cp *.class javassist/javassist.jar ../ebin
 
 
 Complexity.class: Complexity.java

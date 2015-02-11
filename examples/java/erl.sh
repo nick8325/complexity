@@ -1,4 +1,4 @@
 #!/bin/bash
 
-PATH=.:$PATH erl -sname complexity -pa ../../src
+PATH=.:$PATH erl -sname complexity $*
 

@@ -9,6 +9,7 @@ all: subdirs
      
 subdirs: $(SUBDIRS)
 clean: $(CLEANSUBDIRS)
+	rm -f ebin/*
      
 $(SUBDIRS):
 	$(MAKE) -C $@

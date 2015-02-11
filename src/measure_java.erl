@@ -18,7 +18,7 @@ set_java_node(Node) ->
 
 start_java_node() ->
   {ok, Node} = java:start_node([{java_verbose, "WARNING"},
-                                {add_to_java_classpath,[".", "../../java", "../../java/javassist/javassist.jar"]}]),
+                                {add_to_java_classpath,["."]}]),
   set_java_node(Node).
 
 stop_java_node() ->
@@ -26,8 +26,8 @@ stop_java_node() ->
 
 
 %% Runs the provided java command string.
-run_java_commands(GC, Runs, Iterations, CmdsString) ->
-  java:call_static(get_java_node(), 'Complexity', run, [GC, Runs, Iterations, CmdsString]).
+run_java_commands(GC, Iterations, CmdsString) ->
+  java:call_static(get_java_node(), 'Complexity', run, [GC, Iterations, CmdsString]).
 
 
 %% Measure functions.

@@ -7,6 +7,7 @@ all: $(BEAM_FILES)
 
 %.beam: %.erl
 	erlc -I ../include $<
+	cp $@ ../ebin
 
 clean:
 	rm -f $(BEAM_FILES)
