@@ -17,12 +17,12 @@ public class MyClass
     m_list = new ArrayList();
   }
 
-  public void add(int x)
+  public void add(Object x)
   {
     m_list.add(x);
   }
 
-  public boolean remove(int x) throws InterruptedException
+  public boolean remove(Object x) throws InterruptedException
   {
     for(int i = 0; i < m_list.size(); i++)
     {

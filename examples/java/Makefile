@@ -1,5 +1,5 @@
 
-all: MyClass.class example_MyClass.beam example_HashSet.beam example_TreeSet.beam
+all: MyClass.class example_MyClass.beam example_HashSet.beam example_TreeSet.beam example_ArrayList.beam
 	cp erl.sh java ../../ebin
 
 

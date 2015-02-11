@@ -47,9 +47,9 @@ eval_cmd_model({remove, X}, Model) ->
 
 %% Convert command tuples to Java strings.
 to_command({add, X}) ->
-  io_lib:format("obj.add(new Integer(~p));", [X]);
+  io_lib:format("obj.add(Integer.valueOf(~p));", [X]);
 to_command({remove, X}) ->
-  io_lib:format("obj.remove(new Integer(~p));", [X]).
+  io_lib:format("obj.remove(Integer.valueOf(~p));", [X]).
 
 %% Convert the commands to a list of Java code strings.
 to_commands(Commands) ->

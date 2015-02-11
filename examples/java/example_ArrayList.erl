@@ -1,5 +1,5 @@
 
--module(example_MyClass).
+-module(example_ArrayList).
 
 
 -include_lib("eqc/include/eqc.hrl").
@@ -10,29 +10,11 @@
 
 
 %%
-%% This module shows how to test the complexity of the Java class MyClass that
-%% is a simple implementation of a set that allows for duplicated elements.
-%%
-%% The Java class provides two methods:
-%%   void add(int x) - Adds the provided integer to the set.
-%%   boolean remove(int x) - Removes the first occurrence of the provided integer
-%%                           from the set.
+%% This module is based on example_MyClass.erl and shows how to test the
+%% complexity of the Java class ArrayList.
 %%
 
 
-%%
-%% To test the complexity we generate sequences of abstract add and remove commands
-%% and do so by implementing two command generators:
-%%   cmds - Generates a new command given the list of elements in the set.
-%%   command_sequence - Takes a sequence of commands and returns a list of
-%%                      sequences where a new command has been inserted in
-%%                      the sequence.
-%%
-
-%% Returns a new command given a model (i.e., the list of current elements in the set).
-%%
-%% The new command either adds a random element, removes the element 0 (even if it
-%% doesn't occur in the set) or removes one of the elements in the set.
 cmds(Model) ->
   [ {add, resize(100, int())} ] ++
   [ {remove, 0} ] ++
@@ -72,7 +54,7 @@ to_command({remove, X}) ->
 %% Convert the commands to a list of Java code strings.
 to_commands(Commands) ->
   ["{",
-     "MyClass obj = new MyClass();",
+     "java.util.ArrayList obj = new java.util.ArrayList();",
      lists:map(fun to_command/1, Commands),
    "}"].
 
