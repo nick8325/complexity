@@ -1,5 +1,5 @@
 
--module(example_TreeSet).
+-module(example_containers).
 
 
 -include_lib("eqc/include/eqc.hrl").
@@ -11,7 +11,7 @@
 
 %%
 %% This module is based on example_MyClass.erl and shows how to test the
-%% complexity of the Java class TreeSet.
+%% complexity of various Java container classes.
 %%
 
 
@@ -20,13 +20,27 @@ cmds(Model) ->
   [ {remove, 0} ] ++
   [ {remove, elements(Model)} || length(Model) > 0 ].
 
+normalise(Cmds) ->
+  normalise(Cmds, dict:new()).
+
+normalise([], _) -> [];
+normalise([ {Cmd, N} | Cmds ], Dict) ->
+  {N2, Dict2} =
+    case dict:find(N, Dict) of
+      {ok, [X]} -> {X, Dict};
+      error ->
+        X = dict:size(Dict),
+        {X, dict:append(N, X, Dict)}
+    end,
+  [ {Cmd, N2} | normalise(Cmds, Dict2) ].
+
 %% Returns a list of command sequences that have been extended with a new command
 %% at the beginning or the end.
 command_sequence(Cmds) ->
   Model = eval_cmds_model(Cmds),
   ?LET(NewCmds, cmds(Model),
-    return([ [NewCmd | Cmds]  || NewCmd <- NewCmds ] ++
-           [ Cmds ++ [NewCmd] || NewCmd <- NewCmds ] )).
+    return([ normalise([NewCmd | Cmds])  || NewCmd <- NewCmds ] ++
+           [ normalise(Cmds ++ [NewCmd]) || NewCmd <- NewCmds ] )).
 
 %% Evaluates the commands and returns a list of the current elements.
 eval_cmds_model([]) ->
@@ -47,14 +61,14 @@ eval_cmd_model({remove, X}, Model) ->
 
 %% Convert command tuples to Java strings.
 to_command({add, X}) ->
-  io_lib:format("obj.add(Integer.valueOf(~p));", [X]);
+  io_lib:format("container.add(Integer.valueOf(~p));", [X]);
 to_command({remove, X}) ->
-  io_lib:format("obj.remove(Integer.valueOf(~p));", [X]).
+  io_lib:format("container.remove(Integer.valueOf(~p));", [X]).
 
 %% Convert the commands to a list of Java code strings.
-to_commands(Commands) ->
+to_commands(ContainerType, Commands) ->
   ["{",
-     "java.util.TreeSet obj = new java.util.TreeSet();",
+     ContainerType ++ " container = new " ++ ContainerType ++ "();",
      lists:map(fun to_command/1, Commands),
    "}"].
 
@@ -65,9 +79,9 @@ to_commands(Commands) ->
 %%    before running the tests.
 %%  - The number of times to run the commands.
 %%  - The Java code string to run.
-eval_cmds(Cmds) ->
+eval_cmds(ContainerType, Cmds) ->
   RCmds = lists:reverse(Cmds),
-  Commands = to_commands(RCmds),
+  Commands = to_commands(ContainerType, RCmds),
   measure_java:run_java_commands(false, 50, lists:flatten(Commands)).
 
 
@@ -81,11 +95,17 @@ eval_cmds(Cmds) ->
 measure_size(Cmds) ->
   length(Cmds).
 
-measure() ->
+measure(ContainerType) ->
   Family = #family{initial = [], grow = fun command_sequence/1},
   Axes = #axes{size = fun measure_size/1,
-               time = fun eval_cmds/1,
-               repeat = 2},
+               time = fun(Cmds) -> eval_cmds(ContainerType, Cmds) end,
+               repeat = 5},
   {Time, _} = timer:tc(measure_java, measure_java, [1, 100, Family, Axes]),
   Time / 1000000.
+
+measure_ArrayList() -> measure("java.util.ArrayList").
+measure_ArrayListWrapper() -> measure("ArrayListWrapper").
+measure_HashSet() -> measure("java.util.HashSet").
+measure_MyClass() -> measure("MyClass").
+measure_TreeSet() -> measure("java.util.TreeSet").
 

@@ -45,8 +45,8 @@ above the
 
 Running Java examples
 ---------------------
-There is a Java example in examples/java/example_MyClass.erl which can be run in the
-following way. Note that you need to run "./erl.sh" instead of "erl".
+There is a simple Java example in examples/java/example_MyClass.erl which can
+be run in the following way. Note that you need to run "./erl.sh" instead of "erl".
 
   $ make
   $ cd ebin
@@ -55,4 +55,6 @@ following way. Note that you need to run "./erl.sh" instead of "erl".
 
 Instructions on how to write complexity tests for java can be found in the file
 examples/java/example_MyClass.erl.
+
+More examples of how to test Java classes can be found in examples/java/example_containers.erl.
 
