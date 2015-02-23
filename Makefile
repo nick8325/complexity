@@ -5,8 +5,11 @@ CLEANSUBDIRS = $(SUBDIRS:%=clean-%)
 .PHONY: subdirs $(SUBDIRS) $(CLEANSUBDIRS)
 
 
-all: subdirs
+all: mkebin subdirs
      
+mkebin:
+	mkdir -p ebin
+
 subdirs: $(SUBDIRS)
 clean: $(CLEANSUBDIRS)
 	rm -f ebin/*
