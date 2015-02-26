@@ -1,5 +1,5 @@
 
-ERL_FILES = fit.erl timing.erl measure.erl measure_java.erl
+ERL_FILES = fit.erl timing.erl measure.erl measure_java.erl json_gen.erl
 BEAM_FILES = $(ERL_FILES:.erl=.beam)
 
 .PHONY: all clean
