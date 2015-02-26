@@ -1,18 +1,14 @@
 
-SUBDIRS = external haskell src java examples
+SUBDIRS = jsx 
 CLEANSUBDIRS = $(SUBDIRS:%=clean-%)
 
 .PHONY: subdirs $(SUBDIRS) $(CLEANSUBDIRS)
 
 
-all: mkebin subdirs
+all: subdirs
      
-mkebin:
-	mkdir -p ebin
-
 subdirs: $(SUBDIRS)
 clean: $(CLEANSUBDIRS)
-	rm -f ebin/*
      
 $(SUBDIRS):
 	$(MAKE) -C $@

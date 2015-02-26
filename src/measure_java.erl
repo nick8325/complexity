@@ -18,7 +18,7 @@ set_java_node(Node) ->
 
 start_java_node() ->
   {ok, Node} = java:start_node([{java_verbose, "WARNING"},
-                                {add_to_java_classpath,["."]}]),
+                                {add_to_java_classpath,[".", "../external/json-simple/json-simple-1.1.1.jar"]}]),
   set_java_node(Node).
 
 stop_java_node() ->
