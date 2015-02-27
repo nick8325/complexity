@@ -1,5 +1,5 @@
 
-SUBDIRS = external haskell src java examples
+SUBDIRS = libs haskell src java examples
 CLEANSUBDIRS = $(SUBDIRS:%=clean-%)
 
 .PHONY: subdirs $(SUBDIRS) $(CLEANSUBDIRS)

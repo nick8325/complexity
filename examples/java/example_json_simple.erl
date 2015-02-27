@@ -50,20 +50,27 @@ escape_string(Str) ->
 
 time_decode(Lst) ->
   Json = binary:bin_to_list(jsx:encode(Lst)),
-  Commands = 
+  SetupCommands =
     [
       "{",
-      "org.json.simple.parser.JSONParser parser = new org.json.simple.parser.JSONParser();",
-      "Object parsed = parser.parse(" ++ escape_string(Json) ++ ");",
+        "return new Object[]{new org.json.simple.parser.JSONParser(), " ++ escape_string(Json) ++ "};",
       "}"
     ],
-  measure_java:run_java_commands(false, 50, lists:flatten(Commands)).
+  RunCommands = 
+    [
+      "{",
+      "Object[] args = (Object[])$1;",
+      "org.json.simple.parser.JSONParser parser = (org.json.simple.parser.JSONParser)args[0];",
+      "Object parsed = parser.parse((String)args[1]);",
+      "}"
+    ],
+  measure_java:run_java_commands(false, 50, lists:flatten(SetupCommands), lists:flatten(RunCommands)).
 
 measure_decode() ->
-  Family = #family{initial = json_gen:empty(), grow = fun json_gen:grow/1},
+  Family = #family{initial = json_gen:empty(), grow = fun json_gen:grow_all/1},
   Axes = #axes{size = fun measure_size/1,
                time = fun time_decode/1,
                repeat = 2},
-  {Time, _} = timer:tc(measure_java, measure_java, [1,  100, Family, Axes]),
+  {Time, _} = timer:tc(measure_java, measure_java, [1,  50, Family, Axes]),
   Time / 1000000.
 

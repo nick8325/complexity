@@ -23,7 +23,7 @@ time_prettify(Lst) ->
   timing:time(fun jsx:prettify/1, [Json]).
 
 measure(TimeFun) ->
-  Family = #family{initial = json_gen:empty(), grow = fun json_gen:grow/1},
+  Family = #family{initial = json_gen:empty(), grow = fun json_gen:grow_all/1},
   Axes = #axes{size = fun measure_size/1,
                time = TimeFun,
                repeat = 2},

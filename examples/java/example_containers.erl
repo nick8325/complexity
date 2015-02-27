@@ -82,7 +82,7 @@ to_commands(ContainerType, Commands) ->
 eval_cmds(ContainerType, Cmds) ->
   RCmds = lists:reverse(Cmds),
   Commands = to_commands(ContainerType, RCmds),
-  measure_java:run_java_commands(false, 50, lists:flatten(Commands)).
+  measure_java:run_java_commands(false, 50, null, lists:flatten(Commands)).
 
 
 %%

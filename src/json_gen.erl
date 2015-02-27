@@ -50,8 +50,14 @@ extend([ Name | Path], Lst) when is_list(Lst) ->
     end || {XName, X} <- Lst ]. 
 
 
-%% Grows the structure by extending of of its elements.
-grow(X) ->
+%% Grows the structure by extending one of its elements.
+%% Returns a list of ten random extention points.
+grow_random(X) ->
   vector(10,
     ?LET(Path, elements(paths(X)), extend(Path, X))).
+
+%% Grows the structure by extending one of its elements.
+%% Returns a list of all extention points.
+grow_all(X) ->
+  [ extend(Path, X) || Path <- paths(X) ].
  

@@ -6,13 +6,15 @@ public class Complexity
 {
   // Interface used to interface with dynamically generated test runs.
   public interface ITestRun {
-      public void run() throws Exception;
+      public Object setup() throws Exception;
+      public void run(Object state) throws Exception;
   }
 
 
   // The template class used to dynamically generate test runs. 
   public static class TestRun implements ITestRun {
-    public void run() throws Exception {}
+    public Object setup() throws Exception { return null; }
+    public void run(Object state) throws Exception {}
   } 
 
 
@@ -32,18 +34,21 @@ public class Complexity
     } while(Runtime.getRuntime().freeMemory() > freeMemory);
   }
 
-  public static long run(boolean cleanRuntime, int iterations, String command) throws Exception
+  public static long measure(boolean cleanRuntime, int iterations, String setupCommand, String runCommand) throws Exception
   {
     // Generate a new class for the provided command.
     classCounter++;
     CtClass cc = ClassPool.getDefault().getAndRename("Complexity$TestRun", "Complexity$TestRun" + classCounter);
-    cc.getDeclaredMethod("run").setBody(command);
+    if(setupCommand != null && !setupCommand.isEmpty()) cc.getDeclaredMethod("setup").setBody(setupCommand); 
+    cc.getDeclaredMethod("run").setBody(runCommand);
+
     ITestRun testRun = (ITestRun)cc.toClass().newInstance();
+    Object state = testRun.setup();
 
     if(cleanRuntime) cleanRuntime();
 
     long startTime = System.nanoTime();
-    for(int i = 0; i < iterations; i++) testRun.run();
+    for(int i = 0; i < iterations; i++) testRun.run(state);
     long elapsedTime = System.nanoTime() - startTime;
 
     cc.detach();
