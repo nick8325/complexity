@@ -48,6 +48,9 @@ area (Known trans maxX a b _) = a * x + b * y
   where
     [x, y] = opt trans maxX
 
+eval :: Fit1 -> Double -> Double
+eval (Known t _ a b _) x = a * xt t x + b
+
 data Transformation = Transformation {
   level_ :: Int,
   complexity_ :: String,
@@ -138,8 +141,7 @@ fit trans (worst, best) =
     pointsBelow = preprocess minimum points
     points = worst ++ best
 
-main = do
-  input <- fmap parse (readFile "data")
+run1 input = do
   let points = (input, input)
       lin = fit idT points
       logg = fit logT points
@@ -158,6 +160,25 @@ main = do
 
   putStrLn "=== Best fit"
   print theBest
+
+  return theBest
+
+removeOutlier :: Fit1 -> [(Double, Double)] -> [(Double, Double)]
+removeOutlier fit xs = drop 1 (sortBy (comparing badness) xs)
+  where
+    badness (x, y)
+      | eval fit x == 0 = 0
+      | otherwise = abs ((eval fit x - y) / eval fit x)
+
+run 0 input = run1 input
+run n input = do
+  theBest <- run1 input
+  run (n-1) (removeOutlier (above theBest) input)
+
+main = do
+  [outliers] <- getArgs
+  input <- fmap parse (readFile "data")
+  theBest <- run (read outliers) input
 
   putStrLn $ "Worst-case complexity: " ++ complexity (above theBest)
   putStrLn $ "Best-case complexity: " ++ complexity (below theBest)
