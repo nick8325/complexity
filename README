@@ -5,6 +5,7 @@ You need to have the following installed:
   * The Haskell platform
   * GLPK, the GNU Linear Programming Kit
   * JavaErlang (https://github.com/fredlund/JavaErlang)
+  * Rebar
 
 Plus optionally:
   * gnuplot
