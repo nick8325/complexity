@@ -11,7 +11,7 @@ measure(Rounds, MaxSize, Family, Axes) ->
     || I <- lists:seq(1, Rounds),
        Kind <- [worst, best]],
   io:format("Fitting data.~n~n"),
-  fit:fit(lists:concat(Results)).
+  fit:fit(Axes#axes.outliers, lists:concat(Results)).
 
 round(I, Kind, MaxSize, Family, Axes) ->
   io:format("~p. ~s case.", [I, kind_name(Kind)]),
