@@ -50,6 +50,13 @@ extend([ Name | Path], Lst) when is_list(Lst) ->
     end || {XName, X} <- Lst ]. 
 
 
+%% Returns the maximum depth of the structure.
+max_depth([]) -> 1;
+max_depth(Lst) when is_list(Lst) ->
+  1 + lists:max([ max_depth(X) || {_, X} <- Lst]);
+max_depth({value, _}) -> 0.
+
+
 %% Grows the structure by extending one of its elements.
 %% Returns a list of ten random extention points.
 grow_random(X) ->

@@ -1,5 +1,5 @@
 
--module(example_json_simple).
+-module(example_gson).
 
 
 -include_lib("eqc/include/eqc.hrl").
@@ -28,14 +28,16 @@ time_encode(Lst) ->
   SetupCommands =
     [
       "{",
-        "org.json.simple.parser.JSONParser parser = new org.json.simple.parser.JSONParser();",
-        "return parser.parse(" ++ escape_string(Json) ++ ");",
+        "com.google.gson.Gson parser = new com.google.gson.Gson();",
+        "return new Object[]{new com.google.gson.Gson(), parser.fromJson(" ++ escape_string(Json) ++ ", Object.class)};",
       "}"
     ],
   RunCommands = 
     [
       "{",
-        "$1.toString();",
+        "Object[] args = (Object[])$1;",
+        "com.google.gson.Gson parser = (com.google.gson.Gson)args[0];",
+        "parser.toJson(args[1]);",
       "}"
     ],
   measure_java:run_java_commands(false, 50, lists:flatten(SetupCommands), lists:flatten(RunCommands)).
@@ -46,15 +48,15 @@ time_decode(Lst) ->
   SetupCommands =
     [
       "{",
-        "return new Object[]{new org.json.simple.parser.JSONParser(), " ++ escape_string(Json) ++ "};",
+        "return new Object[]{new com.google.gson.Gson(), " ++ escape_string(Json) ++ "};",
       "}"
     ],
   RunCommands = 
     [
       "{",
         "Object[] args = (Object[])$1;",
-        "org.json.simple.parser.JSONParser parser = (org.json.simple.parser.JSONParser)args[0];",
-        "Object parsed = parser.parse((String)args[1]);",
+        "com.google.gson.Gson parser = (com.google.gson.Gson)args[0];",
+        "Object parsed = parser.fromJson((String)args[1], Object.class);",
       "}"
     ],
   measure_java:run_java_commands(false, 50, lists:flatten(SetupCommands), lists:flatten(RunCommands)).
@@ -64,8 +66,9 @@ measure(TimeFun) ->
   Family = #family{initial = json_gen:empty(), grow = fun json_gen:grow_all/1},
   Axes = #axes{size = fun measure_size/1,
                time = TimeFun,
-               repeat = 2},
-  {Time, _} = timer:tc(measure_java, measure_java, [1,  100, Family, Axes]),
+               repeat = 2,
+               measurements = [fun json_gen:max_depth/1]},
+  {Time, _} = timer:tc(measure_java, measure_java, [1,  50, Family, Axes]),
   Time / 1000000.
 
 
