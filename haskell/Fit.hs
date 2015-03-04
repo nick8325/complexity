@@ -177,6 +177,13 @@ run n input = do
 
 main = do
   [outliers] <- getArgs
+
+  -- Write the raw data without the complexity curves.
+  writeFile "gnuplot_raw" . unlines $ [
+    "set dummy n",
+    "plot 'data'"
+    ]
+
   input <- fmap parse (readFile "data")
   theBest <- run (read outliers) input
 

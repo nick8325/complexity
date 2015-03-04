@@ -82,7 +82,7 @@ to_commands(ContainerType, Commands) ->
 eval_cmds(ContainerType, Cmds) ->
   RCmds = lists:reverse(Cmds),
   Commands = to_commands(ContainerType, RCmds),
-  measure_java:run_java_commands(false, 50, null, lists:flatten(Commands)).
+  measure_java:run_java_commands(true, 50, null, lists:flatten(Commands)).
 
 
 %%
@@ -99,7 +99,7 @@ measure(ContainerType) ->
   Family = #family{initial = [], grow = fun command_sequence/1},
   Axes = #axes{size = fun measure_size/1,
                time = fun(Cmds) -> eval_cmds(ContainerType, Cmds) end,
-               repeat = 5},
+               repeat = 2},
   {Time, _} = timer:tc(measure_java, measure_java, [1, 100, Family, Axes]),
   Time / 1000000.
 

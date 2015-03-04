@@ -86,7 +86,7 @@ to_commands(Commands) ->
 eval_cmds(Cmds) ->
   RCmds = lists:reverse(Cmds),
   Commands = to_commands(RCmds),
-  measure_java:run_java_commands(false, 50, null, lists:flatten(Commands)).
+  measure_java:run_java_commands(true, 50, null, lists:flatten(Commands)).
 
 
 %%
@@ -103,7 +103,7 @@ measure() ->
   Family = #family{initial = [], grow = fun command_sequence/1},
   Axes = #axes{size = fun measure_size/1,
                time = fun eval_cmds/1,
-               repeat = 5},
+               repeat = 2},
   {Time, _} = timer:tc(measure_java, measure_java, [1,  100, Family, Axes]),
   Time / 1000000.
 

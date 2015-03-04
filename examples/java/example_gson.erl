@@ -17,7 +17,8 @@
 
 %% Measures the size of the structure.
 measure_size(Lst) ->
-  length(json_gen:paths(Lst)).
+%  length(json_gen:paths(Lst)).
+  length(binary:bin_to_list(jsx:encode(Lst))).
 
 escape_string(Str) ->
   io_lib:format("~p", [Str]).
@@ -40,7 +41,7 @@ time_encode(Lst) ->
         "parser.toJson(args[1]);",
       "}"
     ],
-  measure_java:run_java_commands(false, 50, lists:flatten(SetupCommands), lists:flatten(RunCommands)).
+  measure_java:run_java_commands(true, 50, lists:flatten(SetupCommands), lists:flatten(RunCommands)).
 
 
 time_decode(Lst) ->
@@ -59,7 +60,7 @@ time_decode(Lst) ->
         "Object parsed = parser.fromJson((String)args[1], Object.class);",
       "}"
     ],
-  measure_java:run_java_commands(false, 50, lists:flatten(SetupCommands), lists:flatten(RunCommands)).
+  measure_java:run_java_commands(true, 50, lists:flatten(SetupCommands), lists:flatten(RunCommands)).
 
 
 measure(TimeFun) ->
@@ -67,8 +68,9 @@ measure(TimeFun) ->
   Axes = #axes{size = fun measure_size/1,
                time = TimeFun,
                repeat = 2,
-               measurements = [fun json_gen:max_depth/1]},
-  {Time, _} = timer:tc(measure_java, measure_java, [1,  50, Family, Axes]),
+               measurements = [fun json_gen:max_depth/1]
+              },
+  {Time, _} = timer:tc(measure_java, measure_java, [1,  500, Family, Axes]),
   Time / 1000000.
 
 

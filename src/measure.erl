@@ -10,16 +10,23 @@ measure(Rounds, MaxSize, Family, Axes) ->
     [ round(I*2 + case Kind of worst -> -1; best -> 0 end, Kind, MaxSize, Family, Axes)
     || I <- lists:seq(1, Rounds),
        Kind <- [worst, best]],
-  io:format("Fitting data.~n~n"),
-  fit:fit(Axes#axes.outliers, lists:concat(Results)).
+  if Family#family.warmup -> ok;
+     true ->
+       io:format("~nFitting data.~n~n"),
+       fit:fit(Axes#axes.outliers, lists:concat(Results))
+  end.
 
 round(I, Kind, MaxSize, Family, Axes) ->
-  io:format("~p. ~s case.", [I, kind_name(Kind)]),
+  if Family#family.warmup -> ok;
+     true -> io:format("~p. ~s case.~n", [I, kind_name(Kind)])
+  end,
   Axes1 = kind_axes(Axes, Kind),
   Frontier = #frontier{inert = [], ert = [point(Family#family.initial, Axes1)]},
-  Result = run(Frontier, MaxSize, Family, Axes1),
+  Result = run(0, Frontier, MaxSize, Family, Axes1),
   Worst = worst_case(Result),
-  io:format("~n~p~n~n", [Worst]),
+  if Family#family.warmup -> ok;
+     true -> io:format("~n~p~n~n", [Worst])
+  end,
   [ kind_point(X, Kind) || X <- Result ].
 
 kind_name(worst) -> "Worst";
@@ -44,14 +51,16 @@ having_maximum(F, Xs) ->
   Maximum = lists:max(lists:map(F, Xs)),
   [ X || X <- Xs, F(X) == Maximum ].
 
-run(#frontier{inert = Inert, ert = []}, _, _, _) ->
+run(_Count, #frontier{inert = Inert, ert = []}, _, _, _) ->
   Inert;
-run(#frontier{inert = Inert, ert = [Cand|Ert]}, MaxSize, Family=#family{grow = Grow}, Axes) ->
+run(Count, #frontier{inert = Inert, ert = [Cand|Ert]}, MaxSize, Family=#family{grow = Grow}, Axes) ->
   Frontier1 = #frontier{inert = [Cand|Inert], ert = Ert},
   Z = eqc_gen:pick(Grow(Cand#point.value)),
   Cands = [ point(Value, Axes) || Value <- lists:usort(Z) ],
+  Count2 = Count + length(Cands),
   Cands1 = [ C || C=#point{coords=[Size|_]} <- Cands, Size =< MaxSize ],
-  run(add_cands_to_frontier(Cands1, Frontier1, Axes), MaxSize, Family, Axes).
+  Frontier2 = add_cands_to_frontier(Count2, Cands1, Frontier1, Axes),
+  run(Count2, Frontier2, MaxSize, Family, Axes).
 
 point(Value, Axes) ->
   %% OBS we use both size and -size as measurements,
@@ -62,16 +71,16 @@ point(Value, Axes) ->
 
 negate(F) -> fun(X) -> -F(X) end.
 
-add_cands_to_frontier(Cands, Frontier, Axes) ->
+add_cands_to_frontier(Count, Cands, Frontier, Axes) ->
   #frontier{inert = Inert, ert = Ert} =
-    lists:foldl(fun(C, F) -> add_to_frontier(C, F, Axes) end, Frontier, Cands),
+    lists:foldl(fun(C, F) -> add_to_frontier(Count, C, F, Axes) end, Frontier, Cands),
   #frontier{inert = Inert, ert = lists:usort(Ert)}.
 
 improve(Cand, Axes) ->
   Cands = [ point(Cand#point.value, Axes) || _ <- lists:seq(1, Axes#axes.repeat) ],
   lists:min([Cand|Cands]).
 
-add_to_frontier(Cand, Frontier=#frontier{inert=Inert, ert=Ert}, Axes) ->
+add_to_frontier(Count, Cand, Frontier=#frontier{inert=Inert, ert=Ert}, Axes) ->
   case [ X || X <- Inert ++ Ert, dominates(X, Cand) ] of
     [_|_] -> Frontier;
     [] ->
@@ -83,7 +92,7 @@ add_to_frontier(Cand, Frontier=#frontier{inert=Inert, ert=Ert}, Axes) ->
           Ert1 = [ X || X <- Ert, not dominates(Cand1, X) ],
           %io:format("."),
           {Coords1, [_|Coords2]} = lists:split(2, Cand1#point.coords),
-          io:format("~p ", [Coords1 ++ Coords2]),
+          io:format(" ~p (~p,~p)           \r", [Coords1 ++ Coords2, Count, length(Ert1)]),
           #frontier{inert=Inert1, ert=[Cand1|Ert1]}
       end
   end.

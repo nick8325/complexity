@@ -11,7 +11,8 @@
 %% provided list of names.
 name(Names) ->
   ?SUCHTHAT(Name,
-            ?LET(Name, non_empty(list(elements(lists:seq($a, $z)))), binary:list_to_bin(Name)),
+%            ?LET(Name, non_empty(list(elements(lists:seq($a, $z)))), binary:list_to_bin(Name)),
+            ?LET(Name, vector(3, elements(lists:seq($a, $z))), binary:list_to_bin(Name)),
             not(lists:member(Name, Names))).
 
 

@@ -38,7 +38,7 @@ time_encode(Lst) ->
         "$1.toString();",
       "}"
     ],
-  measure_java:run_java_commands(false, 50, lists:flatten(SetupCommands), lists:flatten(RunCommands)).
+  measure_java:run_java_commands(true, 50, lists:flatten(SetupCommands), lists:flatten(RunCommands)).
 
 
 time_decode(Lst) ->
@@ -57,7 +57,7 @@ time_decode(Lst) ->
         "Object parsed = parser.parse((String)args[1]);",
       "}"
     ],
-  measure_java:run_java_commands(false, 50, lists:flatten(SetupCommands), lists:flatten(RunCommands)).
+  measure_java:run_java_commands(true, 50, lists:flatten(SetupCommands), lists:flatten(RunCommands)).
 
 
 measure(TimeFun) ->
