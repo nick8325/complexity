@@ -26,8 +26,8 @@ stop_java_node() ->
 
 
 %% Runs the provided java command strings and returns the runtime in ms.
-run_java_commands(GC, Iterations, SetupCmdsString, CmdsString) ->
-  java:call_static(get_java_node(), 'Complexity', measure, [GC, Iterations, SetupCmdsString, CmdsString]) / 1000000.
+run_java_commands(GC, Iterations, SetupCmdsString, CmdsString, TeardownCmdsString) ->
+  java:call_static(get_java_node(), 'Complexity', measure, [GC, Iterations, SetupCmdsString, CmdsString, TeardownCmdsString]) / 1000000.
 
 
 %% Measure functions.

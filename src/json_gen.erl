@@ -18,7 +18,8 @@ name(Names) ->
 
 %% Generates a field value.
 value() ->
-  int().  
+  100.
+%  int().  
 
 
 %% Returns an empty structure.
@@ -40,7 +41,7 @@ paths(Path, {Name, Lst}) when is_list(Lst) ->
 
 %% Extends the array or fields with the provided path.
 extend([], {value, X}) ->
-  [{name([]), {value, X}}];
+  [];
 extend([], Lst) when is_list(Lst) ->
   Names = [ Name || {Name, _} <- Lst ],
   X = {name(Names), {value, value()}}, 
@@ -52,17 +53,26 @@ extend([ Name | Path], Lst) when is_list(Lst) ->
 
 
 %% Returns the maximum depth of the structure.
+max_depth({value, _}) -> 0;
 max_depth([]) -> 1;
 max_depth(Lst) when is_list(Lst) ->
-  1 + lists:max([ max_depth(X) || {_, X} <- Lst]);
-max_depth({value, _}) -> 0.
+  1 + lists:max([ max_depth(X) || {_, X} <- Lst]).
 
 
+take(N, Lst) ->
+  case N > length(Lst) of
+    true -> Lst;
+    _ -> {X, _} = lists:split(N, Lst), X 
+  end.
+
+ 
 %% Grows the structure by extending one of its elements.
 %% Returns a list of ten random extention points.
 grow_random(X) ->
-  vector(10,
-    ?LET(Path, elements(paths(X)), extend(Path, X))).
+  ?LET(Paths, shuffle(paths(X)),
+    [ extend(Path, X) || Path <- take(10, Paths) ]).
+%  vector(10,
+%    ?LET(Path, elements(paths(X)), extend(Path, X))).
 
 %% Grows the structure by extending one of its elements.
 %% Returns a list of all extention points.

@@ -57,16 +57,17 @@ time_decode(Lst) ->
         "Object parsed = parser.parse((String)args[1]);",
       "}"
     ],
-  measure_java:run_java_commands(true, 50, lists:flatten(SetupCommands), lists:flatten(RunCommands)).
+  measure_java:run_java_commands(true, 50, lists:flatten(SetupCommands), lists:flatten(RunCommands), null).
 
 
 measure(TimeFun) ->
-  Family = #family{initial = json_gen:empty(), grow = fun json_gen:grow_all/1},
+  Family = #family{initial = json_gen:empty(), grow = fun json_gen:grow_random/1},
   Axes = #axes{size = fun measure_size/1,
                time = TimeFun,
-               repeat = 2},
+               repeat = 2,
+               measurements = [ fun json_gen:max_depth/1 ]},
   ClassPaths = [ "../libs/json-simple/json-simple-1.1.1.jar" ],
-  {Time, _} = timer:tc(measure_java, measure_java, [1,  50, Family, Axes, ClassPaths]),
+  {Time, _} = timer:tc(measure_java, measure_java, [1, 100, Family, Axes, ClassPaths]),
   Time / 1000000.
 
 
