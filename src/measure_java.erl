@@ -32,14 +32,18 @@ run_java_commands(GC, Iterations, SetupCmdsString, CmdsString, TeardownCmdsStrin
 
 %% Measure functions.
 measure_java(Rounds, MaxSize, Family, Axes, ClassPaths) ->
+  measure_java(Rounds, MaxSize, Family, Axes, ClassPaths, fun(_) -> ok end, fun(_) -> ok end).
+
+measure_java(Rounds, MaxSize, Family, Axes, ClassPaths, SetupFun, TeardownFun) ->
   eqc:start(),
   start_java_node(ClassPaths),
-%  WarmUpGrow = fun(X) -> [eqc_gen:oneof((Family#family.grow)(X))] end,
+  SetupFun(),
   WarmUpGrow = fun(X) -> ?LET(Lst, (Family#family.grow)(X), [eqc_gen:oneof(Lst)]) end,
   io:format("Warming up the Java VM...~n"),
   measure(1, MaxSize, Family#family{ grow = WarmUpGrow, warmup = true }, Axes),
   io:format("~nRunning the complexity benchmarks...~n"),
   Result = measure(Rounds, MaxSize, Family, Axes),
+  TeardownFun(),
   stop_java_node(),
   Result.
 
