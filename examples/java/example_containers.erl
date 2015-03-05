@@ -100,7 +100,7 @@ measure(ContainerType) ->
   Axes = #axes{size = fun measure_size/1,
                time = fun(Cmds) -> eval_cmds(ContainerType, Cmds) end,
                repeat = 2},
-  {Time, _} = timer:tc(measure_java, measure_java, [1, 100, Family, Axes]),
+  {Time, _} = timer:tc(measure_java, measure_java, [1, 100, Family, Axes, []]),
   Time / 1000000.
 
 measure_ArrayList() -> measure("java.util.ArrayList").

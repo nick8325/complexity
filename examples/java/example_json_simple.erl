@@ -65,7 +65,8 @@ measure(TimeFun) ->
   Axes = #axes{size = fun measure_size/1,
                time = TimeFun,
                repeat = 2},
-  {Time, _} = timer:tc(measure_java, measure_java, [1,  100, Family, Axes]),
+  ClassPaths = [ "../libs/json-simple/json-simple-1.1.1.jar" ],
+  {Time, _} = timer:tc(measure_java, measure_java, [1,  50, Family, Axes, ClassPaths]),
   Time / 1000000.
 
 

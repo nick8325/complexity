@@ -16,9 +16,9 @@ get_java_node() ->
 set_java_node(Node) ->
   put(java_node, Node).
 
-start_java_node() ->
+start_java_node(ClassPaths) ->
   {ok, Node} = java:start_node([{java_verbose, "WARNING"},
-                                {add_to_java_classpath,[".", "../libs/json-simple/json-simple-1.1.1.jar", "../libs/gson/gson-2.3.1.jar"]}]),
+                                {add_to_java_classpath,[ "." | ClassPaths ]}]),
   set_java_node(Node).
 
 stop_java_node() ->
@@ -31,9 +31,9 @@ run_java_commands(GC, Iterations, SetupCmdsString, CmdsString) ->
 
 
 %% Measure functions.
-measure_java(Rounds, MaxSize, Family, Axes) ->
+measure_java(Rounds, MaxSize, Family, Axes, ClassPaths) ->
   eqc:start(),
-  start_java_node(),
+  start_java_node(ClassPaths),
 %  WarmUpGrow = fun(X) -> [eqc_gen:oneof((Family#family.grow)(X))] end,
   WarmUpGrow = fun(X) -> ?LET(Lst, (Family#family.grow)(X), [eqc_gen:oneof(Lst)]) end,
   io:format("Warming up the Java VM...~n"),

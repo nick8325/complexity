@@ -38,9 +38,16 @@ kind_axes(Axes, best) ->
      time = negate(Axes#axes.time),
      measurements = lists:map(fun negate/1, Axes#axes.measurements)
     }.
+
 kind_point(Point, worst) -> Point;
 kind_point(Point=#point{coords = [Size|Coords]}, best) ->
   Point#point{coords = [Size|[-Coord || Coord <- Coords]]}.
+
+pretty_coord([Size, Time, _ | Rest]) ->
+  [Size, Time | Rest].
+
+coord_size([Size | _]) -> Size.
+coord_time([_, Time | _]) -> Time.
 
 worst_case(Xs) ->
   MaxSize = having_maximum(fun(#point{coords=[Size|_]}) -> Size end, Xs),
@@ -57,10 +64,12 @@ run(Count, #frontier{inert = Inert, ert = [Cand|Ert]}, MaxSize, Family=#family{g
   Frontier1 = #frontier{inert = [Cand|Inert], ert = Ert},
   Z = eqc_gen:pick(Grow(Cand#point.value)),
   Cands = [ point(Value, Axes) || Value <- lists:usort(Z) ],
-  Count2 = Count + length(Cands),
   Cands1 = [ C || C=#point{coords=[Size|_]} <- Cands, Size =< MaxSize ],
-  Frontier2 = add_cands_to_frontier(Count2, Cands1, Frontier1, Axes),
-  run(Count2, Frontier2, MaxSize, Family, Axes).
+  % Debug information
+  ErtSizes = [ coord_size(X#point.coords) || X <- Ert ], 
+  io:format(" ~p (run: ~p, ert: ~p ~w, cands: ~p)           \r", [pretty_coord(Cand#point.coords), Count, length(Ert), ErtSizes, length(Cands)]),
+  Frontier2 = add_cands_to_frontier(Cands1, Frontier1, Axes),
+  run(Count + length(Cands), Frontier2, MaxSize, Family, Axes).
 
 point(Value, Axes) ->
   %% OBS we use both size and -size as measurements,
@@ -71,31 +80,45 @@ point(Value, Axes) ->
 
 negate(F) -> fun(X) -> -F(X) end.
 
-add_cands_to_frontier(Count, Cands, Frontier, Axes) ->
+
+% Add all candidates to the frontier.
+add_cands_to_frontier(Cands, Frontier, Axes) ->
   #frontier{inert = Inert, ert = Ert} =
-    lists:foldl(fun(C, F) -> add_to_frontier(Count, C, F, Axes) end, Frontier, Cands),
+    lists:foldl(fun(C, F) -> add_to_frontier(C, F, Axes) end, Frontier, Cands),
   #frontier{inert = Inert, ert = lists:usort(Ert)}.
 
+
+% Re-run the candidate to see if we can improve its value.
 improve(Cand, Axes) ->
   Cands = [ point(Cand#point.value, Axes) || _ <- lists:seq(1, Axes#axes.repeat) ],
   lists:min([Cand|Cands]).
 
-add_to_frontier(Count, Cand, Frontier=#frontier{inert=Inert, ert=Ert}, Axes) ->
+% Checks if X dominates Y, i.e., all of its coordinate values are
+% greater than or equal to Y's coordinate values.
+dominates(X, Y) ->
+  lists:all(fun({A, B}) -> A >= B end, lists:zip(X#point.coords, Y#point.coords)).
+
+
+% Adds the candidate to the frontier if it is not dominated by any other
+% element in the frontier.
+add_to_frontier(Cand, Frontier=#frontier{inert=Inert, ert=Ert}, Axes) ->
   case [ X || X <- Inert ++ Ert, dominates(X, Cand) ] of
+    % If the candidate is dominated by an element, we return the frontier unchanged.
     [_|_] -> Frontier;
     [] ->
+      % If the candidate is not dominated, we re-run it to try to improve its value
+      % and check if it is still dominating.
       Cand1 = improve(Cand, Axes),
       case [ X || X <- Inert ++ Ert, dominates(X, Cand1) ] of
         [_|_] -> Frontier;
         [] ->
+          % Remove all elements from the frontier that are dominated by the candidate.
           Inert1 = [ X || X <- Inert, not dominates(Cand1, X) ],
           Ert1 = [ X || X <- Ert, not dominates(Cand1, X) ],
           %io:format("."),
-          {Coords1, [_|Coords2]} = lists:split(2, Cand1#point.coords),
-          io:format(" ~p (~p,~p)           \r", [Coords1 ++ Coords2, Count, length(Ert1)]),
+%          io:format(" ~p (~p)           \r", [pretty_coord(Cand1#point.coords), length(Ert1)]),
           #frontier{inert=Inert1, ert=[Cand1|Ert1]}
       end
   end.
 
-dominates(X, Y) ->
-  lists:all(fun({A, B}) -> A >= B end, lists:zip(X#point.coords, Y#point.coords)).
+

@@ -17,8 +17,8 @@
 
 %% Measures the size of the structure.
 measure_size(Lst) ->
-%  length(json_gen:paths(Lst)).
-  length(binary:bin_to_list(jsx:encode(Lst))).
+  length(json_gen:paths(Lst)).
+%  length(binary:bin_to_list(jsx:encode(Lst))).
 
 escape_string(Str) ->
   io_lib:format("~p", [Str]).
@@ -64,13 +64,14 @@ time_decode(Lst) ->
 
 
 measure(TimeFun) ->
-  Family = #family{initial = json_gen:empty(), grow = fun json_gen:grow_all/1},
+  Family = #family{initial = json_gen:empty(), grow = fun json_gen:grow_random/1},
   Axes = #axes{size = fun measure_size/1,
                time = TimeFun,
                repeat = 2,
                measurements = [fun json_gen:max_depth/1]
               },
-  {Time, _} = timer:tc(measure_java, measure_java, [1,  500, Family, Axes]),
+  ClassPaths = [ "../libs/gson/gson-2.3.1.jar" ],
+  {Time, _} = timer:tc(measure_java, measure_java, [1,  50, Family, Axes, ClassPaths]),
   Time / 1000000.
 
 
