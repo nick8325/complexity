@@ -32,7 +32,7 @@ run_java_commands(GC, Iterations, SetupCmdsString, CmdsString, TeardownCmdsStrin
 
 %% Measure functions.
 measure_java(Rounds, MaxSize, Family, Axes, ClassPaths) ->
-  measure_java(Rounds, MaxSize, Family, Axes, ClassPaths, fun(_) -> ok end, fun(_) -> ok end).
+  measure_java(Rounds, MaxSize, Family, Axes, ClassPaths, fun() -> ok end, fun() -> ok end).
 
 measure_java(Rounds, MaxSize, Family, Axes, ClassPaths, SetupFun, TeardownFun) ->
   eqc:start(),
