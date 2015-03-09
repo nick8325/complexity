@@ -41,7 +41,7 @@ time_encode(Lst) ->
         "parser.toJson(args[1]);",
       "}"
     ],
-  measure_java:run_java_commands(true, 50, lists:flatten(SetupCommands), lists:flatten(RunCommands)).
+  measure_java:run_java_commands(true, 50, lists:flatten(SetupCommands), lists:flatten(RunCommands), null).
 
 
 time_decode(Lst) ->
@@ -68,6 +68,7 @@ measure(TimeFun) ->
   Axes = #axes{size = fun measure_size/1,
                time = TimeFun,
                repeat = 2,
+               outliers = 10,
                measurements = [fun json_gen:max_depth/1]
               },
   ClassPaths = [ "../libs/gson/gson-2.3.1.jar" ],
