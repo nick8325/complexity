@@ -181,18 +181,22 @@ main = do
   -- Write the raw data without the complexity curves.
   writeFile "gnuplot_raw" . unlines $ [
     "set dummy n",
-    "plot 'data'"
+    "plot 'data_worst'",
+    "plot 'data_best'"
     ]
 
-  input <- fmap parse (readFile "data")
-  theBest <- run (read outliers) input
+  inputWorst <- fmap parse (readFile "data_worst")
+  inputBest_Raw <- fmap parse (readFile "data_best")
+  let inputBest = inputBest_Raw ++ inputWorst
+  theBestWorst <- run (read outliers) inputWorst
+  theBestBest <- run (read outliers) inputBest
 
-  putStrLn $ "Worst-case complexity: " ++ complexity (above theBest)
-  putStrLn $ "Best-case complexity: " ++ complexity (below theBest)
+  putStrLn $ "Worst-case complexity: " ++ complexity (above theBestWorst)
+  putStrLn $ "Best-case complexity: " ++ complexity (below theBestBest)
 
   writeFile "gnuplot" . unlines $ [
     "set dummy n",
-    "plot 'data'" ++ concat
-      [ ", " ++ formula x ++ " linewidth 2"
-      | x <- [above theBest, below theBest] ]
+    "plot 'data_worst','data_best'," ++
+      formula (above theBestWorst) ++ " linewidth 2," ++
+      formula (below theBestBest) ++ " linewidth 2"
     ]

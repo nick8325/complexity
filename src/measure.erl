@@ -6,14 +6,12 @@
 
 measure(Rounds, MaxSize, Family, Axes) ->
   eqc_gen:pick(true),
-  Results =
-    [ round(I*2 + case Kind of worst -> -1; best -> 0 end, Kind, MaxSize, Family, Axes)
-    || I <- lists:seq(1, Rounds),
-       Kind <- [worst, best]],
+  WorstResults = [ round(I, worst, MaxSize, Family, Axes) || I <- lists:seq(1, Rounds) ],
+  BestResults = [ round(I, best, MaxSize, Family, Axes) || I <- lists:seq(1, Rounds) ],
   if Family#family.warmup -> ok;
      true ->
        io:format("~nFitting data.~n~n"),
-       fit:fit(Axes#axes.outliers, lists:concat(Results))
+       fit:fit(Axes#axes.outliers, lists:concat(WorstResults), lists:concat(BestResults))
   end.
 
 round(I, Kind, MaxSize, Family, Axes) ->
@@ -21,7 +19,9 @@ round(I, Kind, MaxSize, Family, Axes) ->
      true -> io:format("~p. ~s case.~n", [I, kind_name(Kind)])
   end,
   Axes1 = kind_axes(Axes, Kind),
-  Frontier = #frontier{inert = [], ert = [point(Family#family.initial, Axes1)]},
+  % Insert the improved initial point in the frontier.
+  InitialPoint = improve(point(Family#family.initial, Axes1), Axes1),
+  Frontier = #frontier{inert = [], ert = [InitialPoint]},
   Result = run(0, Frontier, MaxSize, Family, Axes1),
   Worst = worst_case(Result),
   if Family#family.warmup -> ok;
@@ -75,7 +75,7 @@ point(Value, Axes) ->
   %% OBS we use both size and -size as measurements,
   %% so that a test case only dominates test cases with the same size,
   %% and we get one test case for each size
-  Funs = [Axes#axes.size, Axes#axes.time, negate(Axes#axes.size)|Axes#axes.measurements],
+  Funs = [Axes#axes.size, Axes#axes.time, negate(Axes#axes.size) | Axes#axes.measurements],
   #point{value = Value, coords = [ F(Value) || F <- Funs ]}.
 
 negate(F) -> fun(X) -> -F(X) end.
@@ -115,8 +115,6 @@ add_to_frontier(Cand, Frontier=#frontier{inert=Inert, ert=Ert}, Axes) ->
           % Remove all elements from the frontier that are dominated by the candidate.
           Inert1 = [ X || X <- Inert, not dominates(Cand1, X) ],
           Ert1 = [ X || X <- Ert, not dominates(Cand1, X) ],
-          %io:format("."),
-%          io:format(" ~p (~p)           \r", [pretty_coord(Cand1#point.coords), length(Ert1)]),
           #frontier{inert=Inert1, ert=[Cand1|Ert1]}
       end
   end.
