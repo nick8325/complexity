@@ -176,17 +176,19 @@ run n input = do
   run (n-1) (removeOutlier (above theBest) input)
 
 main = do
-  [outliers] <- getArgs
+  [name, outliers] <- getArgs
+
+  let dataWorstFile = "data_worst_" ++ name
+  let dataBestFile = "data_best_" ++ name
 
   -- Write the raw data without the complexity curves.
-  writeFile "gnuplot_raw" . unlines $ [
+  writeFile ("gnuplot_raw_" ++ name) . unlines $ [
     "set dummy n",
-    "plot 'data_worst'",
-    "plot 'data_best'"
+    "plot '" ++ dataWorstFile ++ "','" ++ dataBestFile ++ "'"
     ]
 
-  inputWorst <- fmap parse (readFile "data_worst")
-  inputBest_Raw <- fmap parse (readFile "data_best")
+  inputWorst <- fmap parse (readFile dataWorstFile)
+  inputBest_Raw <- fmap parse (readFile dataBestFile)
   let inputBest = inputBest_Raw ++ inputWorst
   theBestWorst <- run (read outliers) inputWorst
   theBestBest <- run (read outliers) inputBest
@@ -194,9 +196,9 @@ main = do
   putStrLn $ "Worst-case complexity: " ++ complexity (above theBestWorst)
   putStrLn $ "Best-case complexity: " ++ complexity (below theBestBest)
 
-  writeFile "gnuplot" . unlines $ [
+  writeFile ("gnuplot_" ++ name) . unlines $ [
     "set dummy n",
-    "plot 'data_worst','data_best'," ++
+    "plot '" ++ dataWorstFile ++ "','" ++ dataBestFile ++ "'," ++
       formula (above theBestWorst) ++ " linewidth 2," ++
       formula (below theBestBest) ++ " linewidth 2"
     ]

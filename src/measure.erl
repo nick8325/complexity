@@ -11,7 +11,7 @@ measure(Rounds, MaxSize, Family, Axes) ->
   if Family#family.warmup -> ok;
      true ->
        io:format("~nFitting data.~n~n"),
-       fit:fit(Axes#axes.outliers, lists:concat(WorstResults), lists:concat(BestResults))
+       fit:fit(Axes#axes.name, Axes#axes.outliers, lists:concat(WorstResults), lists:concat(BestResults))
   end.
 
 round(I, Kind, MaxSize, Family, Axes) ->

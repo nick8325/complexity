@@ -20,7 +20,8 @@ measure() ->
   Family = #family{initial = 1, grow = fun measure_grow/1},
   Axes = #axes{size = fun measure_size/1,
                time = fun measure_time/1,
-               repeat = 100},
+               repeat = 100,
+               name = "noise"},
   {Time, _} = timer:tc(measure, measure, [1, 100, Family, Axes]),
   Time.
  
