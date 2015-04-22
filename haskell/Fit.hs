@@ -120,8 +120,8 @@ findArea trans sol maxX =
         (a', b')
           | maxY - minY <= 0.05 * minY = (0, maxY)
           | otherwise = (a, b)
-        minY = xt trans 0
-        maxY = xt trans maxX
+        minY = a * xt trans 0 + b
+        maxY = a * xt trans maxX + b
       in
         Known trans maxX a' b' sol
     Nothing ->
