@@ -4,6 +4,8 @@ import Data.Tuple
 import Data.List
 import Data.Function
 import Data.Ord
+import Data.Map (Map)
+import qualified Data.Map as Map
 
 parse :: String -> [(Double, Double)]
 parse = map (pair . map read . words) . lines
@@ -117,11 +119,11 @@ findArea trans sol maxX =
   case findSol sol of
     Just (_, [a, b]) ->
       let
+        minY = a * xt trans 0 + b
+        maxY = a * xt trans maxX + b
         (a', b')
           | maxY - minY <= 0.05 * minY = (0, maxY)
           | otherwise = (a, b)
-        minY = a * xt trans 0 + b
-        maxY = a * xt trans maxX + b
       in
         Known trans maxX a' b' sol
     Nothing ->
@@ -175,11 +177,29 @@ run n input = do
   theBest <- run1 input
   run (n-1) (removeOutlier (above theBest) input)
 
+processPoints :: [(Double, Double)] -> [(Double, Double)] -> [(Double, Double)]
+processPoints worst best = sort $ worst ++ prunedBest
+  where
+    findMins :: [(Double, Double)] -> Map Double Double -> Map Double Double
+    findMins [] map = map
+    findMins ((x, y) : rest) map =
+      let map' =
+            case Map.lookup x map of
+              Nothing -> Map.insert x y map
+              Just y' -> if y < y' then Map.insert x y map else map
+      in findMins rest map'
+
+    worstMins = findMins worst Map.empty
+    prunedBest = [ (x, y) | (x, y) <- best,
+                            let y' = Map.findWithDefault y x worstMins,
+                            y <= y' ]
+
 main = do
   [name, outliers] <- getArgs
 
   let dataWorstFile = "data_worst_" ++ name
   let dataBestFile = "data_best_" ++ name
+  let dataPrunedFile = "data_pruned_" ++ name
 
   -- Write the raw data without the complexity curves.
   writeFile ("gnuplot_raw_" ++ name) . unlines $ [
@@ -188,17 +208,20 @@ main = do
     ]
 
   inputWorst <- fmap parse (readFile dataWorstFile)
-  inputBest_Raw <- fmap parse (readFile dataBestFile)
-  let inputBest = inputBest_Raw ++ inputWorst
-  theBestWorst <- run (read outliers) inputWorst
-  theBestBest <- run (read outliers) inputBest
+  inputBest <- fmap parse (readFile dataBestFile)
 
-  putStrLn $ "Worst-case complexity: " ++ complexity (above theBestWorst)
-  putStrLn $ "Best-case complexity: " ++ complexity (below theBestBest)
+  let input = processPoints inputWorst inputBest
+  theBest <- run (read outliers) input
+
+  putStrLn $ "Worst-case complexity: " ++ complexity (above theBest)
+  putStrLn $ "Best-case complexity: " ++ complexity (below theBest)
+
+  -- Write the pruned points to a file.
+  writeFile dataPrunedFile . unlines $ [ show x ++ " " ++ show y  | (x, y) <- input ]
 
   writeFile ("gnuplot_" ++ name) . unlines $ [
     "set dummy n",
-    "plot '" ++ dataWorstFile ++ "','" ++ dataBestFile ++ "'," ++
-      formula (above theBestWorst) ++ " linewidth 2," ++
-      formula (below theBestBest) ++ " linewidth 2"
+    "plot '" ++ dataPrunedFile ++ "'," ++
+      formula (above theBest) ++ " linewidth 2," ++
+      formula (below theBest) ++ " linewidth 2"
     ]
