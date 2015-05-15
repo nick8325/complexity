@@ -6,6 +6,7 @@ import Data.Function
 import Data.Ord
 import Data.Map (Map)
 import qualified Data.Map as Map
+import Control.Monad
 
 parse :: String -> [(Double, Double)]
 parse = map (pair . map read . words) . lines
@@ -65,26 +66,22 @@ data Fit = Fit { above :: Fit1, below :: Fit1 }
 data Fit1 = Unknown Solution | Known Transformation Double Double Double Solution
 
 level :: Fit1 -> Int
-level (Known trans _ a _ _)
-  | a == 0 = 0
-  | otherwise = level_ trans
+level (Known trans _ a _ _) = level_ trans
 
 complexity :: Fit1 -> String
-complexity (Known trans _ a _ _)
-  | a == 0 = "O(1)"
-  | otherwise = "O(" ++ complexity_ trans ++ ")"
+complexity (Known trans _ a _ _) = "O(" ++ complexity_ trans ++ ")"
 
-formula (Known trans _ a b _)
-  | a == 0 = show b
+formula fit@(Known trans _ a b _)
+  | level fit == 0 = show (a + b)
   | otherwise = show a ++ " * " ++ formula_ trans ++ " + " ++ show b
 
-bestOf :: [Fit] -> Fit
-bestOf fs =
+bestOf :: (Fit1 -> Bool) -> [Fit] -> Fit
+bestOf p fs =
   head . sortBy (comparing area_) $
     [ Fit a b
     | a@Known{} <- map above fs,
       b@Known{} <- map below fs,
-      level a >= level b ]
+      p a, p b ]
   where
     area_ (Fit above below) = area above - area below
 
@@ -106,6 +103,7 @@ instance Show Fit1 where
       " sol = " ++ show sol
       ]
 
+conT = Transformation 0 "1" "1" (const 1) id
 idT = Transformation 2 "n" "n" id (\x -> x^2 / 2)
 logT = Transformation 1 "log n" "log(n)" (\x -> log (x+1))
        (\x -> (x+1) * log (x+1) - x)
@@ -118,14 +116,7 @@ rename f ps = [(f x, y) | (x, y) <- ps]
 findArea trans sol maxX =
   case findSol sol of
     Just (_, [a, b]) ->
-      let
-        minY = a * xt trans 0 + b
-        maxY = a * xt trans maxX + b
-        (a', b')
-          | maxY - minY <= 0.05 * minY = (0, maxY)
-          | otherwise = (a, b)
-      in
-        Known trans maxX a' b' sol
+      Known trans maxX a b sol
     Nothing ->
       Unknown sol
   where
@@ -143,39 +134,45 @@ fit trans (worst, best) =
     pointsBelow = preprocess minimum points
     points = worst ++ best
 
-run1 input = do
+tight :: Fit1 -> Bool
+tight fit | level fit == 0 = True
+tight fit@(Known trans maxX a b _) =
+  abs (maxY - minY) > abs (0.10 * minY)
+  where
+    minY = a * xt trans 0 + b
+    maxY = a * xt trans maxX + b
+
+run1 chatty p input = do
   let points = (input, input)
+      con = fit conT points
       lin = fit idT points
       logg = fit logT points
       nlogn = fit nlognT points
       quad = fit n2T points
-      theBest = bestOf [lin, logg, nlogn, quad]
+      theBest = bestOf p [con, lin, logg, nlogn, quad]
 
-  putStrLn "=== Linear fit"
-  print lin
-  putStrLn "=== Logarithmic fit"
-  print logg
-  putStrLn "=== n log n fit"
-  print nlogn
-  putStrLn "=== Quadratic fit"
-  print quad
+  when chatty $ do
+    putStrLn "=== Constant fit"
+    print con
+    putStrLn "=== Linear fit"
+    print lin
+    putStrLn "=== Logarithmic fit"
+    print logg
+    putStrLn "=== n log n fit"
+    print nlogn
+    putStrLn "=== Quadratic fit"
+    print quad
 
-  putStrLn "=== Best fit"
-  print theBest
+    putStrLn "=== Best fit"
+    print theBest
 
   return theBest
 
-removeOutlier :: Fit1 -> [(Double, Double)] -> [(Double, Double)]
-removeOutlier fit xs = drop 1 (sortBy (comparing badness) xs)
-  where
-    badness (x, y)
-      | eval fit x == 0 = 0
-      | otherwise = abs ((eval fit x - y) / eval fit x)
-
-run 0 input = run1 input
 run n input = do
-  theBest <- run1 input
-  run (n-1) (removeOutlier (above theBest) input)
+  prelBest <- run1 False (const True) input
+  let badness (x, y) = abs ((eval (above prelBest) x - y) / eval (above prelBest) x)
+      input' = drop n (sortBy (comparing badness) input)
+  run1 True tight input'
 
 processPoints :: [(Double, Double)] -> [(Double, Double)] -> [(Double, Double)]
 processPoints worst best = sort $ worst ++ prunedBest
